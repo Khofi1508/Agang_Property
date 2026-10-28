@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Admin - Agang Property</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#121212] text-white min-h-screen">
+    <!-- Navbar Admin -->
+    <nav class="bg-[#1c1c1c] border-b border-yellow-600/30 px-8 py-4 flex justify-between items-center">
+        <div>
+            <span class="text-xl font-bold text-yellow-500">AGANG ADMIN</span>
+            <span class="text-xs bg-red-900/60 text-red-200 px-2 py-1 rounded ml-2">Superuser</span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <a href="{% url 'home' %}" class="text-gray-300 hover:text-yellow-400">Lihat Website</a>
+            <a href="/admin/" class="text-gray-300 hover:text-yellow-400">Panel Database Lengkap</a>
+            <a href="{% url 'admin_edit_profile' %}" class="bg-[#2a2a2a] border border-yellow-500/40 px-3 py-1.5 rounded hover:bg-yellow-500 hover:text-black transition">Edit Profil Admin</a>
+            <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-white">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-8">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded bg-yellow-500/20 border border-yellow-500 text-yellow-300">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Statistik Ringkas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                <p class="text-gray-400 text-sm">Total Katalog Properti</p>
+                <p class="text-3xl font-bold text-yellow-500 mt-2">{{ total_properti }}</p>
+            </div>
+            <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                <p class="text-gray-400 text-sm">Pelanggan Terdaftar</p>
+                <p class="text-3xl font-bold text-yellow-500 mt-2">{{ total_customer }}</p>
+            </div>
+            <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                <p class="text-gray-400 text-sm">Testimoni Masuk</p>
+                <p class="text-3xl font-bold text-yellow-500 mt-2">{{ total_testimoni }}</p>
+            </div>
+            <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                <p class="text-gray-400 text-sm">Proyek Handover 2026</p>
+                <p class="text-3xl font-bold text-yellow-500 mt-2">{{ total_upcoming }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Tambah Properti Baru -->
+            <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                <h2 class="text-lg font-bold text-yellow-500 mb-4">Tambah Properti ke Katalog</h2>
+                <form method="POST" enctype="multipart/form-data" class="space-y-3 text-sm">
+                    {% csrf_token %}
+                    <input type="hidden" name="tambah_properti" value="1">
+                    <div>
+                        <label class="text-gray-400">Kategori Hunian</label>
+                        <select name="kategori" required class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700 mt-1">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.nama_kategori }}</option>
+                            {% empty %}
+                                <option disabled>Buat Kategori dulu di /admin/</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="text" name="nama_properti" placeholder="Nama Properti (Misal: Rumah Tinggal Cluster)" required class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name="kota" placeholder="Kota (Makassar)" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                        <input type="text" name="lokasi_detail" placeholder="Panakkukang, Makassar" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" name="harga" placeholder="Harga (450000000)" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                        <input type="text" name="badge_status" placeholder="Badge (Sisa 1 Unit)" class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="number" name="kamar_tidur" placeholder="Jml KT" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                        <input type="number" name="kamar_mandi" placeholder="Jml KM" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                        <input type="number" name="luas_bangunan" placeholder="Luas (m2)" required class="p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                    </div>
+                    <input type="text" name="status_furnitur_sertifikat" value="Full Furnished" class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                    <textarea name="deskripsi_singkat" placeholder="Deskripsi Singkat Hunian..." rows="2" required class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700"></textarea>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Foto Utama Properti</label>
+                        <input type="file" name="gambar_utama" required class="w-full text-xs text-gray-400">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded">
+                        + SIMPAN PROPERTI
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tabel Daftar Properti & Pelanggan -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                    <h2 class="text-lg font-bold text-yellow-500 mb-4">Daftar Properti Aktif</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="border-b border-gray-700 text-gray-400">
+                                <tr>
+                                    <th class="py-2">Properti</th>
+                                    <th>Lokasi</th>
+                                    <th>Harga</th>
+                                    <th>Spesifikasi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800">
+                                {% for prop in properties %}
+                                <tr>
+                                    <td class="py-3 font-medium">{{ prop.nama_properti }}</td>
+                                    <td class="text-gray-400">{{ prop.lokasi_detail }}</td>
+                                    <td class="text-yellow-400">Rp {{ prop.harga }}</td>
+                                    <td class="text-gray-400">{{ prop.kamar_tidur }} KT • {{ prop.kamar_mandi }} KM • {{ prop.luas_bangunan }}m²</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada data properti.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                    <h2 class="text-lg font-bold text-yellow-500 mb-4">Data Pelanggan Terdaftar</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="border-b border-gray-700 text-gray-400">
+                                <tr>
+                                    <th class="py-2">Nama / Username</th>
+                                    <th>Email</th>
+                                    <th>No. Telepon</th>
+                                    <th>Alamat</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800">
+                                {% for cust in customers %}
+                                <tr>
+                                    <td class="py-2.5">{{ cust.user.first_name|default:cust.user.username }}</td>
+                                    <td class="text-gray-400">{{ cust.user.email }}</td>
+                                    <td class="text-gray-300">{{ cust.no_telepon|default:"-" }}</td>
+                                    <td class="text-gray-400">{{ cust.alamat|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada pelanggan yang mendaftar.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Pelanggan - Agang Property</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#121212] text-white min-h-screen">
+    <!-- Navbar Pengguna -->
+    <nav class="bg-[#1c1c1c] border-b border-gray-800 px-8 py-4 flex justify-between items-center">
+        <a href="{% url 'home' %}" class="text-xl font-bold text-yellow-500">AGANG PROPERTY</a>
+        <div class="flex items-center gap-4 text-sm">
+            <a href="{% url 'home' %}" class="text-gray-300 hover:text-yellow-400">Halaman Home</a>
+            <a href="{% url 'user_edit_profile' %}" class="bg-[#2a2a2a] border border-yellow-500/40 px-3 py-1.5 rounded hover:bg-yellow-500 hover:text-black transition">Edit Profil Saya</a>
+            <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-8">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded bg-yellow-500/20 border border-yellow-500 text-yellow-300">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Kartu Ringkasan Profil Pengguna & Form Testimoni -->
+            <div class="space-y-6">
+                <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                    <div class="flex items-center gap-4 mb-4">
+                        {% if profile.foto_profil %}
+                            <img src="{{ profile.foto_profil.url }}" class="w-16 h-16 rounded-full object-cover border-2 border-yellow-500">
+                        {% else %}
+                            <div class="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 font-bold text-xl">
+                                {{ request.user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="text-lg font-bold">{{ request.user.first_name|default:request.user.username }}</h2>
+                            <p class="text-gray-400 text-xs">{{ request.user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-300 space-y-2 border-t border-gray-800 pt-4">
+                        <p><span class="text-gray-500">No. Telepon:</span> {{ profile.no_telepon|default:"Belum diisi" }}</p>
+                        <p><span class="text-gray-500">Alamat:</span> {{ profile.alamat|default:"Belum diisi" }}</p>
+                    </div>
+                    <a href="{% url 'user_edit_profile' %}" class="block text-center w-full mt-4 py-2 border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black rounded text-sm font-semibold transition">
+                        Lengkapi / Ubah Profil
+                    </a>
+                </div>
+
+                <!-- Form Kirim Testimoni "Kata Mereka" -->
+                <div class="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800">
+                    <h3 class="font-bold text-yellow-500 mb-3">Beri Review (Kata Mereka)</h3>
+                    <form method="POST" class="space-y-3 text-sm">
+                        {% csrf_token %}
+                        <input type="hidden" name="kirim_ulasan" value="1">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Rating Bintang</label>
+                            <select name="rating_bintang" class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700">
+                                <option value="5">★★★★★ (5 Bintang)</option>
+                                <option value="4">★★★★ (4 Bintang)</option>
+                                <option value="3">★★★ (3 Bintang)</option>
+                            </select>
+                        </div>
+                        <textarea name="ulasan" rows="3" placeholder="Bagikan pengalaman Anda bersama Agang Property..." required class="w-full p-2 rounded bg-[#2a2a2a] border border-gray-700"></textarea>
+                        <button type="submit" class="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded">
+                            KIRIM ULASAN
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Rekomendasi Katalog Hunian -->
+            <div class="lg:col-span-2">
+                <h2 class="text-xl font-bold text-yellow-500 mb-4">Katalog Hunian Siap Huni & Furnished</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for prop in properties %}
+                    <div class="bg-[#1c1c1c] rounded-xl overflow-hidden border border-gray-800">
+                        {% if prop.gambar_utama %}
+                            <img src="{{ prop.gambar_utama.url }}" class="w-full h-44 object-cover">
+                        {% endif %}
+                        <div class="p-4">
+                            <span class="text-xs text-yellow-500 uppercase">{{ prop.lokasi_detail }}</span>
+                            <h3 class="font-bold text-lg mt-1">{{ prop.nama_properti }}</h3>
+                            <p class="text-yellow-400 font-bold mt-1">Rp {{ prop.harga }}</p>
+                            <p class="text-gray-400 text-xs mt-2">{{ prop.kamar_tidur }} KT • {{ prop.kamar_mandi }} KM • {{ prop.luas_bangunan }}m² • {{ prop.status_furnitur_sertifikat }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500">Belum ada unit properti yang ditampilkan.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
