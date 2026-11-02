@@ -1,11 +1,1412 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Katalog Mahakarya Properti - Agang Property</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #111215;
+            --bg-card: #18191c;
+            --bg-card-inner: #212327;
+            --bg-input: #25272c;
+            --gold: #eab308;
+            --gold-bright: #facc15;
+            --burgundy: #7f2d2d;
+            --burgundy-hover: #963636;
+            --burgundy-dark: #3a191b;
+            --text-white: #f8fafc;
+            --text-gray: #9ca3af;
+            --text-muted: #6b7280;
+            --border-dark: rgba(255, 255, 255, 0.07);
+            --font-serif: 'Playfair Display', Georgia, serif;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-white);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: 0.25s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ================= NAVBAR ================= */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(17, 18, 21, 0.94);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-dark);
+            padding: 18px 0;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--burgundy-dark);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .brand-title {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        .brand-sub {
+            font-size: 9px;
+            letter-spacing: 2.5px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-gray);
+        }
+
+        .nav-links a.active,
+        .nav-links a:hover {
+            color: var(--text-white);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .btn-konsultasi {
+            background-color: var(--burgundy);
+            color: var(--text-white);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 11px 20px;
+            border-radius: 6px;
+        }
+
+        .btn-konsultasi:hover {
+            background-color: var(--burgundy-hover);
+        }
+
+        .nav-auth-link {
+            font-size: 11px;
+            color: var(--text-gray);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ================= CATALOG HEADER & FILTER ================= */
+        .catalog-hero {
+            padding: 50px 0 30px;
+        }
+
+        .badge-collection {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(127, 45, 45, 0.35);
+            border: 1px solid rgba(234, 179, 8, 0.25);
+            color: var(--gold);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 50px;
+            margin-bottom: 16px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .header-title-box h1 {
+            font-family: var(--font-serif);
+            font-size: 46px;
+            font-weight: 500;
+            line-height: 1.15;
+            margin-bottom: 10px;
+        }
+
+        .header-title-box h1 em {
+            color: var(--gold);
+            font-style: italic;
+        }
+
+        .header-title-box p {
+            color: var(--text-gray);
+            font-size: 14px;
+            max-width: 580px;
+        }
+
+        .sort-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+        }
+
+        .sort-select {
+            background: var(--bg-card-inner);
+            color: var(--text-white);
+            border: 1px solid var(--border-dark);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-family: var(--font-sans);
+            outline: none;
+            cursor: pointer;
+            min-width: 190px;
+        }
+
+        /* Filter Panel Box */
+        .filter-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 44px;
+        }
+
+        .search-input-row {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 6px 8px 6px 16px;
+            margin-bottom: 18px;
+        }
+
+        .search-icon {
+            color: var(--gold);
+            margin-right: 12px;
+            font-size: 14px;
+        }
+
+        .search-input-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-white);
+            font-size: 13.5px;
+            font-family: var(--font-sans);
+            outline: none;
+        }
+
+        .btn-cari {
+            background: var(--gold-bright);
+            color: #111;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-cari:hover {
+            background: var(--gold);
+        }
+
+        .dropdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .dropdown-col label {
+            display: block;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .dropdown-col label span {
+            color: var(--gold);
+            margin-right: 4px;
+        }
+
+        .dropdown-col select {
+            width: 100%;
+            background: var(--bg-input);
+            color: var(--text-white);
+            border: 1px solid var(--border-dark);
+            padding: 11px 14px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-family: var(--font-sans);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .quick-pills-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-dark);
+        }
+
+        .pintas-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-right: 6px;
+        }
+
+        .q-pill {
+            background: var(--bg-input);
+            color: var(--text-gray);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 50px;
+            border: 1px solid var(--border-dark);
+        }
+
+        .q-pill.active,
+        .q-pill:hover {
+            background: var(--burgundy);
+            color: var(--text-white);
+            border-color: transparent;
+        }
+
+        /* ================= UNIT UNGGULAN & GRID ================= */
+        .grid-subheader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 26px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .grid-subheader-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .grid-subheader-left h2 {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .badge-unit-count {
+            background: rgba(234, 179, 8, 0.14);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: 6px;
+        }
+
+        .grid-subheader-right {
+            font-size: 12.5px;
+            color: var(--text-gray);
+        }
+
+        .grid-subheader-right strong {
+            color: var(--text-white);
+        }
+
+        /* 3x3 Property Cards */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 26px;
+            margin-bottom: 44px;
+        }
+
+        .cat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .cat-img-box {
+            position: relative;
+            height: 240px;
+            overflow: hidden;
+        }
+
+        .cat-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cat-img-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(14,15,18,0.25) 0%, rgba(14,15,18,0.1) 45%, rgba(14,15,18,0.92) 100%);
+        }
+
+        .top-badges {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            display: flex;
+            gap: 6px;
+            z-index: 2;
+        }
+
+        .b-red {
+            background: rgba(127, 45, 45, 0.92);
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .b-dark {
+            background: rgba(20, 22, 26, 0.88);
+            color: #e2e8f0;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-bookmark {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(20, 22, 26, 0.75);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: var(--text-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .img-bottom-info {
+            position: absolute;
+            bottom: 14px;
+            left: 16px;
+            right: 16px;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .price-label-sm {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: #cbd5e1;
+            text-transform: uppercase;
+        }
+
+        .price-gold-lg {
+            font-family: var(--font-serif);
+            color: var(--gold);
+            font-size: 21px;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .cicilan-pill {
+            background: rgba(24, 25, 28, 0.88);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #cbd5e1;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-align: right;
+            line-height: 1.3;
+        }
+
+        .cat-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .cat-location {
+            color: #d4a338;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cat-title {
+            font-family: var(--font-serif);
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-white);
+        }
+
+        .cat-desc {
+            color: var(--text-gray);
+            font-size: 12px;
+            margin-bottom: 18px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .cat-specs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-top: 1px solid var(--border-dark);
+            border-bottom: 1px solid var(--border-dark);
+            padding: 12px 0;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .c-spec-col span {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .c-spec-col strong {
+            font-size: 12.5px;
+            color: var(--text-white);
+            font-weight: 600;
+        }
+
+        .cat-actions {
+            margin-top: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-detail-red {
+            flex: 1;
+            background: var(--burgundy);
+            color: var(--text-white);
+            text-align: center;
+            padding: 11px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .btn-detail-red:hover {
+            background: var(--burgundy-hover);
+        }
+
+        .btn-icon-gold {
+            width: 40px;
+            background: var(--bg-card-inner);
+            border: 1px solid rgba(234, 179, 8, 0.25);
+            color: var(--gold);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* ================= PAGINATION BAR ================= */
+        .pagination-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 10px;
+            padding: 14px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 64px;
+            font-size: 12.5px;
+            color: var(--text-gray);
+        }
+
+        .page-numbers {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            background: var(--bg-card-inner);
+            border: 1px solid var(--border-dark);
+            color: var(--text-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .page-btn.active,
+        .page-btn:hover {
+            background: var(--gold-bright);
+            color: #111;
+            border-color: transparent;
+        }
+
+        /* ================= PRE-BOOKING TAHAP 2 BANNER ================= */
+        .prebooking-banner {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-dark);
+            padding: 64px 56px;
+            margin-bottom: 48px;
+            background: linear-gradient(90deg, rgba(15, 16, 19, 0.96) 0%, rgba(15, 16, 19, 0.85) 55%, rgba(15, 16, 19, 0.45) 100%),
+                        url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+        }
+
+        .prebooking-banner h2 {
+            font-family: var(--font-serif);
+            font-size: 44px;
+            font-weight: 600;
+            line-height: 1.15;
+            margin-bottom: 18px;
+        }
+
+        .prebooking-banner h2 em {
+            display: block;
+            color: var(--gold);
+            font-style: italic;
+        }
+
+        .prebooking-desc {
+            max-width: 580px;
+            color: #cbd5e1;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .prebooking-perks {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px 28px;
+            max-width: 620px;
+            margin-bottom: 34px;
+            font-size: 12.5px;
+            color: #e2e8f0;
+        }
+
+        .perk-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .perk-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #111;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .prebooking-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .btn-vip-gold {
+            background: var(--gold-bright);
+            color: #111;
+            padding: 14px 26px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .btn-progress-dark {
+            background: rgba(34, 36, 40, 0.9);
+            border: 1px solid var(--border-dark);
+            color: var(--text-white);
+            padding: 14px 26px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        /* ================= KPR FINANCING BANNER ================= */
+        .kpr-banner {
+            background: linear-gradient(90deg, rgba(68, 26, 29, 0.55) 0%, rgba(24, 25, 28, 0.96) 65%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 44px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 80px;
+        }
+
+        .kpr-tag {
+            color: var(--gold);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .kpr-left h3 {
+            font-family: var(--font-serif);
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 1.25;
+            margin-bottom: 12px;
+            max-width: 520px;
+        }
+
+        .kpr-left p {
+            color: var(--text-gray);
+            font-size: 13px;
+            max-width: 580px;
+        }
+
+        .kpr-actions {
+            display: flex;
+            gap: 14px;
+        }
+
+        .btn-kpr-sim {
+            background: var(--bg-input);
+            border: 1px solid var(--border-dark);
+            color: var(--text-white);
+            padding: 14px 22px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-align: center;
+            text-transform: uppercase;
+            line-height: 1.4;
+        }
+
+        .btn-kpr-consult {
+            background: var(--burgundy);
+            color: var(--gold-bright);
+            padding: 14px 24px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-align: center;
+            text-transform: uppercase;
+            line-height: 1.4;
+        }
+
+        /* ================= FOOTER ================= */
+        .footer {
+            border-top: 1px solid var(--border-dark);
+            padding: 70px 0 36px;
+            font-size: 12.5px;
+            color: var(--text-gray);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1.2fr;
+            gap: 48px;
+            margin-bottom: 56px;
+        }
+
+        .footer-desc {
+            margin: 18px 0 24px;
+            max-width: 340px;
+            line-height: 1.7;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-icons a {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: var(--bg-card-inner);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+
+        .footer-heading {
+            color: var(--gold);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .footer-links-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .footer-contact-list {
+            list-style: none;
+            margin-top: 16px;
+        }
+
+        .footer-contact-list li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #d1d5db;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border-dark);
+            padding-top: 28px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 992px) {
+            .dropdown-grid, .catalog-grid, .prebooking-perks, .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            .nav-links { display: none; }
+        }
+    </style>
 </head>
 <body>
-    ini halaman katalog
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <div class="container nav-content">
+            <a href="{% url 'home' %}" class="brand">
+                <div class="brand-icon">⌂</div>
+                <div class="brand-text">
+                    <span class="brand-title">AGANG</span>
+                    <span class="brand-sub">PROPERTY</span>
+                </div>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="{% url 'home' %}">HOME</a></li>
+                <li><a href="{% url 'catalog' %}">GALLERY</a></li>
+                <li><a href="{% url 'catalog' %}" class="active">CATALOG</a></li>
+                <li><a href="{% url 'home' %}#upcoming">ABOUT US</a></li>
+                <li><a href="#footer">CONTACT</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <a href="#kpr-section" class="btn-konsultasi">KONSULTASI MARKETING</a>
+                {% if request.user.is_authenticated %}
+                    {% if request.user.is_superuser %}
+                        <a href="{% url 'admin_dashboard' %}" class="nav-auth-link">PANEL ADMIN</a>
+                    {% else %}
+                        <a href="{% url 'user_dashboard' %}" class="nav-auth-link">{{ request.user.username }}</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-auth-link">AGANG</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= HEADER & FILTER PANEL ================= -->
+    <section class="catalog-hero">
+        <div class="container">
+            <div class="badge-collection">
+                ★ KOLEKSI EKSKLUSIF MAKASSAR & SEKITARNYA
+            </div>
+
+            <form method="GET" action="{% url 'catalog' %}">
+                <div class="header-row">
+                    <div class="header-title-box">
+                        <h1>Katalog <em>Mahakarya</em> Properti</h1>
+                        <p>Temukan hunian prestisius dengan sertifikasi legalitas teruji, material arsitektur premium, dan kemudahan simulasi KPR transparan.</p>
+                    </div>
+
+                    <div class="sort-box">
+                        <span class="sort-label">URUTKAN :</span>
+                        <select name="urutkan" class="sort-select" onchange="this.form.submit()">
+                            <option value="rekomendasi" {% if request.GET.urutkan == 'rekomendasi' %}selected{% endif %}>Rekomendasi Terbaik</option>
+                            <option value="termurah" {% if request.GET.urutkan == 'termurah' %}selected{% endif %}>Harga Terendah</option>
+                            <option value="termahal" {% if request.GET.urutkan == 'termahal' %}selected{% endif %}>Harga Tertinggi</option>
+                            <option value="terbaru" {% if request.GET.urutkan == 'terbaru' %}selected{% endif %}> Koleksi Terbaru</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Box Filter Utama -->
+                <div class="filter-panel">
+                    <div class="search-input-row">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Cari berdasarkan nama cluster, lokasi (Panakkukang, Antang, Somba Opu), atau tipe unit...">
+                        <button type="submit" class="btn-cari">CARI</button>
+                    </div>
+
+                    <div class="dropdown-grid">
+                        <div class="dropdown-col">
+                            <label><span>🏢</span> TIPE PROPERTI</label>
+                            <select name="kategori" onchange="this.form.submit()">
+                                <option value="">Semua Tipe Hunian</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.slug }}" {% if request.GET.kategori == cat.slug %}selected{% endif %}>{{ cat.nama_kategori }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="dropdown-col">
+                            <label><span>📍</span> WILAYAH STRATEGIS</label>
+                            <select name="wilayah" onchange="this.form.submit()">
+                                <option value="">Semua Lokasi Makassar & Sekitar</option>
+                                <option value="Panakkukang" {% if request.GET.wilayah == 'Panakkukang' %}selected{% endif %}>Panakkukang, Makassar</option>
+                                <option value="Tanjung Bunga" {% if request.GET.wilayah == 'Tanjung Bunga' %}selected{% endif %}>Tanjung Bunga, Makassar</option>
+                                <option value="Antang" {% if request.GET.wilayah == 'Antang' %}selected{% endif %}>Antang Raya, Makassar</option>
+                                <option value="Hertasning" {% if request.GET.wilayah == 'Hertasning' %}selected{% endif %}>Hertasning Baru, Makassar</option>
+                                <option value="Gowa" {% if request.GET.wilayah == 'Gowa' %}selected{% endif %}>Somba Opu, Gowa</option>
+                            </select>
+                        </div>
+
+                        <div class="dropdown-col">
+                            <label><span>💳</span> RENTANG ANGGARAN</label>
+                            <select name="anggaran" onchange="this.form.submit()">
+                                <option value="">Semua Rentang Harga</option>
+                                <option value="under_600" {% if request.GET.anggaran == 'under_600' %}selected{% endif %}>Di Bawah Rp 600 Juta</option>
+                                <option value="600_1000" {% if request.GET.anggaran == '600_1000' %}selected{% endif %}>Rp 600 Juta - Rp 1 Miliar</option>
+                                <option value="above_1000" {% if request.GET.anggaran == 'above_1000' %}selected{% endif %}>Di Atas Rp 1 Miliar</option>
+                            </select>
+                        </div>
+
+                        <div class="dropdown-col">
+                            <label><span>🛡️</span> LEGALITAS & PROGRES</label>
+                            <select name="legalitas" onchange="this.form.submit()">
+                                <option value="">Semua Status Unit</option>
+                                <option value="Siap Huni" {% if request.GET.legalitas == 'Siap Huni' %}selected{% endif %}>Siap Huni (Ready Stock)</option>
+                                <option value="SHM" {% if request.GET.legalitas == 'SHM' %}selected{% endif %}>SHM Ready Makassar</option>
+                                <option value="Indent" {% if request.GET.legalitas == 'Indent' %}selected{% endif %}>Indent / Pre-Booking</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="quick-pills-row">
+                        <span class="pintas-label">PINTAS:</span>
+                        <a href="{% url 'catalog' %}" class="q-pill {% if not request.GET.kategori and not request.GET.anggaran and not request.GET.legalitas %}active{% endif %}">● Semua Unit</a>
+                        <a href="?kategori=cluster-tengah-kota" class="q-pill {% if request.GET.kategori == 'cluster-tengah-kota' %}active{% endif %}">Cluster Tengah Kota</a>
+                        <a href="?kategori=villa-resort" class="q-pill {% if request.GET.kategori == 'villa-resort' %}active{% endif %}">Villa & Sanctuary</a>
+                        <a href="?legalitas=ECO" class="q-pill {% if request.GET.legalitas == 'ECO' %}active{% endif %}">Eco-Green Residence</a>
+                        <a href="?anggaran=under_600" class="q-pill {% if request.GET.anggaran == 'under_600' %}active{% endif %}">Di Bawah Rp 600 Juta</a>
+                        <a href="?legalitas=SHM" class="q-pill {% if request.GET.legalitas == 'SHM' %}active{% endif %}">SHM Ready Makassar</a>
+                    </div>
+                </div>
+            </form>
+
+            <!-- ================= SUBHEADER & KATALOG GRID ================= -->
+            <div class="grid-subheader">
+                <div class="grid-subheader-left">
+                    <h2>Unit Unggulan Siap Survey</h2>
+                    <span class="badge-unit-count">{% if total_tampil %}{{ total_tampil }}{% else %}9{% endif %} Unit Tersedia</span>
+                </div>
+                <div class="grid-subheader-right">
+                    Menampilkan <strong>{% if properties %}{{ properties|length }}{% else %}9{% endif %}</strong> dari <strong>{% if total_terdaftar %}{{ total_terdaftar }}{% else %}24{% endif %}</strong> properti terdaftar
+                </div>
+            </div>
+
+            <div class="catalog-grid">
+                {% for prop in properties %}
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        {% if prop.gambar_utama %}
+                            <img src="{{ prop.gambar_utama.url }}" alt="{{ prop.nama_properti }}">
+                        {% endif %}
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            {% if prop.badge_status %}<span class="b-red">{{ prop.badge_status }}</span>{% endif %}
+                            {% if prop.badge_kedua %}<span class="b-dark">{{ prop.badge_kedua }}</span>{% endif %}
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp {{ prop.harga_format_titik }}</div>
+                            </div>
+                            <div class="cicilan-pill">{{ prop.estimasi_cicilan }}</div>
+                        </div>
+                    </div>
+
+                    <div class="cat-body">
+                        <div class="cat-location">📍 {{ prop.lokasi_detail }}</div>
+                        <h3 class="cat-title">{{ prop.nama_properti }}</h3>
+                        <p class="cat-desc">{{ prop.deskripsi_singkat }}</p>
+
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>{{ prop.jumlah_lantai }}</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>{{ prop.kamar_tidur }}</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>{{ prop.kamar_mandi }}</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>{{ prop.luas_bangunan }}m²</strong></div>
+                        </div>
+
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold" title="Simulasi & Konsultasi">🗎</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <!-- 6 Kartu Prototipe Bawaan (Tampil jika database kosong / pencarian belum diisi) -->
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80" alt="Rumah Tinggal Cluster">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">SIAP HUNI</span>
+                            <span class="b-dark">SHM READY</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 460.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~3,1<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Green River, Tanjung Bunga, Makassar</div>
+                        <h3 class="cat-title">Rumah Tinggal Cluster...</h3>
+                        <p class="cat-desc">Hunian minimalis kompak 1 lantai di jantung distrik komersial Makassar. Kanopi modern,...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>1</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>1</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>60m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" alt="Virginia Park Luxury">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">ECO-LIVING</span>
+                            <span class="b-dark">SOLAR READY</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 890.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~5,8<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Antang Raya, Makassar</div>
+                        <h3 class="cat-title">Virginia Park Luxury...</h3>
+                        <p class="cat-desc">Hunian dua lantai berkonsep green sanctuary dengan cross-ventilation system, private...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>3</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>110m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80" alt="The Mutiara Springs">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">PRESTIGE SIGNATURE</span>
+                            <span class="b-dark">SMART VILLA</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 1.250.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~8,2<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Somba Opu, Gowa - Makassar</div>
+                        <h3 class="cat-title">The Mutiara Springs...</h3>
+                        <p class="cat-desc">Hunian berarsitektur tropis modern dengan privasi optimal, terhubung dengan clubhouse dan inner...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>4</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>3</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>145m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80" alt="CitraLand Grand Boulevard">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">BEST SELLER</span>
+                            <span class="b-dark">BOULEVARD DEPAN</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 1.650.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~10,8<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Hertasning Baru, Makassar</div>
+                        <h3 class="cat-title">CitraLand Grand Boulevard</h3>
+                        <p class="cat-desc">Hunian megah di arteri utama Hertasning Baru, memiliki ceiling tinggi 4 meter, 2 carport mobil,...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>4+1</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>4</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>180m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80" alt="The Lakeview Pavilion Villa">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">WATERFRONT LUXURY</span>
+                            <span class="b-dark">PRIVATE POOL</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 2.100.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~13,8<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Tanjung Bunga Waterfront, Makassar</div>
+                        <h3 class="cat-title">The Lakeview Pavilion Villa</h3>
+                        <p class="cat-desc">Koleksi hunian tepi danau paling prestisius dengan lanskap terbuka, balkon master suite menghadap...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>5</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>4</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>220m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cat-card">
+                    <div class="cat-img-box">
+                        <img src="https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80" alt="Artisan Facade Townhouse">
+                        <div class="cat-img-overlay"></div>
+                        <div class="top-badges">
+                            <span class="b-red">INDENT TAHAP 1</span>
+                            <span class="b-dark">DP 0% PROMO</span>
+                        </div>
+                        <div class="btn-bookmark">🔖</div>
+                        <div class="img-bottom-info">
+                            <div>
+                                <span class="price-label-sm">MULAI DARI</span>
+                                <div class="price-gold-lg">Rp 720.000.000</div>
+                            </div>
+                            <div class="cicilan-pill">Cicilan ~4,7<br>Jt/bln</div>
+                        </div>
+                    </div>
+                    <div class="cat-body">
+                        <div class="cat-location">📍 Panakkukang Mas, Makassar</div>
+                        <h3 class="cat-title">Artisan Facade Townhouse</h3>
+                        <p class="cat-desc">Desain fasad Japandi kontemporer dengan efisiensi tata ruang maksimal, mezzanine...</p>
+                        <div class="cat-specs">
+                            <div class="c-spec-col"><span>Lantai</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>K. Tidur</span><strong>3</strong></div>
+                            <div class="c-spec-col"><span>K. Mandi</span><strong>2</strong></div>
+                            <div class="c-spec-col"><span>Luas</span><strong>90m²</strong></div>
+                        </div>
+                        <div class="cat-actions">
+                            <a href="#" class="btn-detail-red">DETAIL UNIT →</a>
+                            <a href="#kpr-section" class="btn-icon-gold">🗎</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ================= PAGINATION BAR ================= -->
+            <div class="pagination-bar">
+                <div>
+                    Menampilkan <strong>1 - {% if properties %}{{ properties|length }}{% else %}9{% endif %}</strong> dari total <strong>{% if total_terdaftar %}{{ total_terdaftar }}{% else %}24{% endif %}</strong> properti terverifikasi
+                </div>
+                <div class="page-numbers">
+                    {% if properties.has_previous %}
+                        <a href="?page={{ properties.previous_page_number }}" class="page-btn">&lt;</a>
+                    {% else %}
+                        <span class="page-btn">&lt;</span>
+                    {% endif %}
+
+                    <a href="?page=1" class="page-btn active">1</a>
+                    <a href="?page=2" class="page-btn">2</a>
+                    <a href="?page=3" class="page-btn">3</a>
+                    <span class="page-btn">...</span>
+
+                    {% if properties.has_next %}
+                        <a href="?page={{ properties.next_page_number }}" class="page-btn">&gt;</a>
+                    {% else %}
+                        <span class="page-btn">&gt;</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ================= PRE-BOOKING EXCLUSIVE TAHAP 2 ================= -->
+            <div class="prebooking-banner">
+                <div class="badge-collection">● PRE-BOOKING EXCLUSIVE TAHAP 2</div>
+                <h2>
+                    Spring / Summer 2026
+                    <em>Dates Available</em>
+                </h2>
+                <p class="prebooking-desc">
+                    Pilihan kavling istimewa dan unit tipe Grand Villa dengan harga perdana. Dapatkan garansi buyback tahunan, cicilan developer 36x tanpa bunga, serta kebebasan kustomisasi arsitektur denah interior bersama tim konsultan Agang Property.
+                </p>
+
+                <div class="prebooking-perks">
+                    <div class="perk-item"><span class="perk-check">✓</span> Prioritas Memilih Kavling Sudut Hook</div>
+                    <div class="perk-item"><span class="perk-check">✓</span> Harga Perdana (Potensi Capital Gain 22%)</div>
+                    <div class="perk-item"><span class="perk-check">✓</span> Free Biaya AJB, BPHTB & Balik Nama</div>
+                    <div class="perk-item"><span class="perk-check">✓</span> Garansi Struktur Bangunan 5 Tahun</div>
+                </div>
+
+                <div class="prebooking-actions">
+                    <a href="#kpr-section" class="btn-vip-gold">DAFTAR ANTREAN VIP & BROSUR PERDANA</a>
+                    <a href="#kpr-section" class="btn-progress-dark">LIHAT PROGRES LAPANGAN</a>
+                </div>
+            </div>
+
+            <!-- ================= SIMULASI PEMBIAYAAN & KPR BANK ================= -->
+            <div id="kpr-section" class="kpr-banner">
+                <div class="kpr-left">
+                    <span class="kpr-tag">SIMULASI PEMBIAYAAN & PRIVATE VIEWING</span>
+                    <h3>Butuh Pendampingan Pembelian atau KPR Bank?</h3>
+                    <p>Konsultan pembiayaan Agang Property bermitra resmi dengan Bank Mandiri, BCA, BSI, dan BTN Prioritas untuk memastikan suku bunga terendah dengan persetujuan cepat.</p>
+                </div>
+                <div class="kpr-actions">
+                    <a href="#footer" class="btn-kpr-sim">SIMULASI<br>KALKULATOR<br>KPR</a>
+                    <a href="https://wa.me/628118900234" target="_blank" class="btn-kpr-consult">HUBUNGI<br>KONSULTAN<br>KAMI</a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer id="footer" class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div class="brand">
+                        <div class="brand-icon">⌂</div>
+                        <div class="brand-text">
+                            <span class="brand-title">AGANG</span>
+                            <span class="brand-sub">PROPERTY</span>
+                        </div>
+                    </div>
+                    <p class="footer-desc">
+                        Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.
+                    </p>
+                    <div class="social-icons">
+                        <a href="#">🌐</a>
+                        <a href="#">📷</a>
+                        <a href="#">▶</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="footer-heading">EKSPLORASI PROPERTI</h5>
+                    <div class="footer-links-grid">
+                        <a href="{% url 'home' %}">Home</a>
+                        <a href="{% url 'catalog' %}">Gallery</a>
+                        <a href="{% url 'catalog' %}">Catalog</a>
+                        <a href="#footer">Contact</a>
+                        <a href="{% url 'home' %}#upcoming">About Us</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="footer-heading">PRIVATE CONCIERGE</h5>
+                    <p>Hubungi konsultan properti privat kami untuk reservasi dan penawaran eksklusif.</p>
+                    <ul class="footer-contact-list">
+                        <li>📞 +62 811 8900 234</li>
+                        <li>✉️ concierge@agangproperty.com</li>
+                        <li>📍 Panakkukang, Makassar, Sulawesi Selatan</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <span>© 2026 Agang Property. Seluruh hak cipta dilindungi undang-undang.</span>
+                <div>
+                    <a href="#" style="margin-right: 20px;">Kebijakan Privasi</a>
+                    <a href="#">Syarat Layanan</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
 </body>
 </html>

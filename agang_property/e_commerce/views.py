@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from .models import CustomerProfile, Category, Property, Testimonial, UpcomingProject
+from django.db.models import Q
+from django.core.paginator import Paginator
 
 # Fungsi pengecekan apakah user adalah Admin (Superuser)
 def is_admin(user):
@@ -236,3 +238,70 @@ def user_edit_profile_view(request):
         return redirect('user_dashboard')
 
     return render(request, 'user_edit_profile.html', {'profile': profile})
+
+# ==========================================
+# 4. Katalog (Publik) 
+# ==========================================
+
+def catalog_view(request):
+    categories = Category.objects.all()
+    properties_list = Property.objects.all().order_by('-tanggal_dibuat')
+    total_terdaftar = properties_list.count()
+
+    # 1. Pencarian Kata Kunci (Nama properti, nama cluster, lokasi, atau kota)
+    q = request.GET.get('q', '').strip()
+    if q:
+        properties_list = properties_list.filter(
+            Q(nama_properti__icontains=q) |
+            Q(nama_cluster__icontains=q) |
+            Q(lokasi_detail__icontains=q) |
+            Q(kota__icontains=q)
+        )
+
+    # 2. Filter 4 Dropdown & Tombol Pintas (Quick Pills)
+    kategori_slug = request.GET.get('kategori', '').strip()
+    wilayah = request.GET.get('wilayah', '').strip()
+    anggaran = request.GET.get('anggaran', '').strip()
+    legalitas = request.GET.get('legalitas', '').strip()
+    urutkan = request.GET.get('urutkan', 'rekomendasi').strip()
+
+    if kategori_slug:
+        properties_list = properties_list.filter(kategori__slug=kategori_slug)
+    if wilayah:
+        properties_list = properties_list.filter(
+            Q(kota__icontains=wilayah) | Q(lokasi_detail__icontains=wilayah)
+        )
+    if anggaran:
+        if anggaran == 'under_600':
+            properties_list = properties_list.filter(harga__lte=600000000)
+        elif anggaran == '600_1000':
+            properties_list = properties_list.filter(harga__gte=600000000, harga__lte=1000000000)
+        elif anggaran == 'above_1000':
+            properties_list = properties_list.filter(harga__gt=1000000000)
+    if legalitas:
+        properties_list = properties_list.filter(
+            Q(status_legalitas__icontains=legalitas) |
+            Q(badge_status__icontains=legalitas) |
+            Q(badge_kedua__icontains=legalitas)
+        )
+
+    # 3. Pengurutan (Sorting)
+    if urutkan == 'termurah':
+        properties_list = properties_list.order_by('harga')
+    elif urutkan == 'termahal':
+        properties_list = properties_list.order_by('-harga')
+    elif urutkan == 'terbaru':
+        properties_list = properties_list.order_by('-tanggal_dibuat')
+
+    # 4. Paginasi (Menampilkan 9 unit per halaman sesuai prototipe)
+    paginator = Paginator(properties_list, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'categories': categories,
+        'properties': page_obj,
+        'total_terdaftar': total_terdaftar,
+        'total_tampil': properties_list.count(),
+    }
+    return render(request, 'katalog.html', context)

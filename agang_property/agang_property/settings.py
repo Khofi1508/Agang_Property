@@ -130,3 +130,7 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Konfigurasi untuk menyimpan dan menampilkan file upload (Gambar Properti & Profil)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

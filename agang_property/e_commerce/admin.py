@@ -13,9 +13,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('nama_properti', 'kategori', 'kota', 'harga', 'badge_status', 'tampil_di_home')
+    list_display = ('nama_properti', 'nama_cluster', 'kategori', 'kota', 'harga', 'badge_status', 'tampil_di_home')
     list_filter = ('kategori', 'kota', 'tampil_di_home')
-    search_fields = ('nama_properti', 'lokasi_detail', 'kota')
+    search_fields = ('nama_properti', 'nama_cluster', 'lokasi_detail', 'kota')
     list_editable = ('tampil_di_home', 'badge_status')
 
 @admin.register(Testimonial)
@@ -28,3 +28,16 @@ class TestimonialAdmin(admin.ModelAdmin):
 class UpcomingProjectAdmin(admin.ModelAdmin):
     list_display = ('nama_proyek', 'badge_info', 'estimasi_serah_terima', 'is_highlight_utama', 'urutan_tampil')
     list_editable = ('is_highlight_utama', 'urutan_tampil')
+    fieldsets = (
+        ('Pengaturan Teks Header Section (Diambil dari Proyek Urutan Ke-1)', {
+            'fields': ('tag_section', 'judul_periode', 'subjudul_emas', 'deskripsi_header')
+        }),
+        ('Detail Kartu Proyek (Kiri & Kanan)', {
+            'fields': (
+                'nama_proyek', 'badge_info', 'ikon_kartu', 'deskripsi', 
+                'harga_mulai', 'estimasi_serah_terima', 'gambar', 
+                'is_highlight_utama', 'urutan_tampil'
+            )
+        }),
+    )
+    

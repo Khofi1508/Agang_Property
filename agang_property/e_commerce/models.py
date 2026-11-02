@@ -2,9 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-# 1. MODEL UNTUK REGISTRASI, LOGIN, PROFIL & EDIT PROFIL CUSTOMER
+# 1. MODEL PROFIL CUSTOMER (Login, Registrasi, Profil & Edit Profil)
 class CustomerProfile(models.Model):
-    # Terhubung 1-ke-1 dengan tabel User bawaan Django (menyimpan username, email, nama, password)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     no_telepon = models.CharField(max_length=20, blank=True, null=True)
     alamat = models.TextField(blank=True, null=True)
@@ -19,11 +18,11 @@ class CustomerProfile(models.Model):
         return f"Profil {self.user.username}"
 
 
-# 2. MODEL KATEGORI HUNIAN (Untuk Tab Filter & Pencarian Tipe Hunian di Home)
+# 2. MODEL KATEGORI HUNIAN (Filter Tab & Dropdown Tipe Properti)
 class Category(models.Model):
-    # Contoh isi: Cluster Tengah Kota, Villa & Resort, Modern Minimalis
-    nama_kategori = models.CharField(max_length=100, null=True, blank=True, help_text="Contoh: Cluster Tengah Kota, Villa & Resort, Modern Minimalis")
-    slug = models.SlugField(unique=True, null=True, default=True, help_text="Ketik huruf kecil semua dengan tanda strip, misal: cluster-tengah-kota")
+    # Contoh: Cluster Tengah Kota, Villa & Resort, Modern Minimalis
+    nama_kategori = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True, help_text="Contoh: cluster-tengah-kota")
 
     class Meta:
         verbose_name = 'Kategori Properti'
@@ -33,29 +32,39 @@ class Category(models.Model):
         return self.nama_kategori
 
 
-# 3. MODEL KATALOG PROPERTI (Bagian "Explore your Homies" & Bar Pencarian)
+# 3. MODEL KATALOG PROPERTI (Mendukung Halaman Home & Halaman Katalog)
 class Property(models.Model):
+    STATUS_UNIT_CHOICES = [
+        ('Siap Huni', 'Siap Huni (Ready Stock)'),
+        ('SHM Ready', 'SHM Ready Makassar'),
+        ('Indent', 'Indent / Pre-Booking'),
+    ]
+
     kategori = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='properties')
+    nama_cluster = models.CharField(max_length=100, default="CLUSTER EXCLUSIVE", help_text="Contoh: CLUSTER GREEN RIVER")
     nama_properti = models.CharField(max_length=200, help_text="Contoh: Rumah Tinggal Cluster...")
     
-    # Untuk filter pencarian Lokasi & label lokasi di foto
-    kota = models.CharField(max_length=100, help_text="Contoh: Makassar, Maros, Gowa")
-    lokasi_detail = models.CharField(max_length=150, help_text="Contoh: Panakkukang, Makassar")
+    # Lokasi untuk filter Wilayah Strategis & teks lokasi
+    kota = models.CharField(max_length=100, default="Makassar", help_text="Contoh: Makassar, Gowa, Maros")
+    lokasi_detail = models.CharField(max_length=150, help_text="Contoh: Green River, Tanjung Bunga, Makassar")
     
-    # Harga & Label
-    label_harga = models.CharField(max_length=50, default="HARGA MULAI DARI", help_text="Contoh: HARGA MULAI DARI atau PENAWARAN SPESIAL")
-    harga = models.DecimalField(max_digits=15, decimal_places=0, help_text="Masukkan angka saja, misal: 450000000")
+    # Harga & Estimasi Cicilan KPR (Tampil di atas gambar pada halaman Katalog)
+    harga = models.DecimalField(max_digits=15, decimal_places=0, help_text="Contoh: 460000000")
+    estimasi_cicilan = models.CharField(max_length=50, default="Cicilan ~3,1 Jt/bln", help_text="Contoh: Cicilan ~3,1 Jt/bln")
     
-    # Badge pojok kanan atas foto & Gambar
-    badge_status = models.CharField(max_length=50, blank=True, null=True, help_text="Contoh: Sisa 1 Unit, Tersisa 2 Unit, Eksklusif")
+    # Dua Badge di Pojok Kiri Atas Gambar & Filter Legalitas
+    badge_status = models.CharField(max_length=50, default="SIAP HUNI", help_text="Badge 1 (Merah), contoh: SIAP HUNI, ECO-LIVING, BEST SELLER")
+    badge_kedua = models.CharField(max_length=50, blank=True, null=True, default="SHM READY", help_text="Badge 2 (Gelap), contoh: SHM READY, SOLAR READY, PRIVATE POOL")
+    status_legalitas = models.CharField(max_length=50, choices=STATUS_UNIT_CHOICES, default='Siap Huni')
+    
     gambar_utama = models.ImageField(upload_to='properti/')
     deskripsi_singkat = models.TextField()
     
-    # 4 Ikon Spesifikasi di Kartu Properti
-    kamar_tidur = models.PositiveIntegerField(help_text="Jumlah KT, misal: 2")
-    kamar_mandi = models.PositiveIntegerField(help_text="Jumlah KM, misal: 2")
-    luas_bangunan = models.PositiveIntegerField(help_text="Luas dalam m2, misal: 90")
-    status_furnitur_sertifikat = models.CharField(max_length=50, default="Full Furnished", help_text="Contoh: SHM atau Full Furnished")
+    # 4 Spesifikasi Utama (Lantai, K. Tidur, K. Mandi, Luas)
+    jumlah_lantai = models.PositiveSmallIntegerField(default=1, help_text="Jumlah Lantai, misal: 1 atau 2")
+    kamar_tidur = models.CharField(max_length=20, default="2", help_text="Jumlah K. Tidur, bisa angka '2' atau teks '4+1'")
+    kamar_mandi = models.PositiveSmallIntegerField(default=1, help_text="Jumlah K. Mandi")
+    luas_bangunan = models.PositiveIntegerField(default=60, help_text="Luas Bangunan dalam m2, misal: 60, 110, 180")
     
     tampil_di_home = models.BooleanField(default=True)
     tanggal_dibuat = models.DateTimeField(auto_now_add=True)
@@ -65,19 +74,22 @@ class Property(models.Model):
         verbose_name_plural = 'Katalog Properti'
 
     def __str__(self):
-        return f"{self.nama_properti} - {self.lokasi_detail}"
+        return f"{self.nama_properti} ({self.lokasi_detail})"
+
+    @property
+    def harga_format_titik(self):
+        return f"{int(self.harga):,}".replace(",", ".")
 
 
-# 4. MODEL REVIEW / TESTIMONI (Bagian "Kata Mereka")
+# 4. MODEL TESTIMONI ("Kata Mereka")
 class Testimonial(models.Model):
-    # Opsional terhubung ke User jika customer yang login menekan tombol "BERI REVIEW +"
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    nama_pengulas = models.CharField(max_length=100, help_text="Contoh: Rahmat, Sartika")
+    nama_pengulas = models.CharField(max_length=100, help_text="Contoh: Rustang, Tamring, Hj. Tenri")
+    waktu_relatif = models.CharField(max_length=50, default="a week ago", help_text="Contoh: a week ago, a month ago")
     ulasan = models.TextField()
     rating_bintang = models.PositiveSmallIntegerField(
         default=5,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text="Nilai bintang 1 sampai 5"
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     tampil_di_home = models.BooleanField(default=True)
     tanggal_ulasan = models.DateTimeField(auto_now_add=True)
@@ -87,22 +99,47 @@ class Testimonial(models.Model):
         verbose_name_plural = 'Testimoni (Kata Mereka)'
 
     def __str__(self):
-        return f"{self.nama_pengulas} ({self.rating_bintang} Bintang)"
+        return f"{self.nama_pengulas} - {self.rating_bintang} Bintang"
 
 
-# 5. MODEL PROYEK MENDATANG (Bagian "Spring / Summer 2026 - Dates Available for Handover")
+# 5. MODEL PROYEK MENDATANG ("Upcoming Private Phase - Dates Available for Handover")
 class UpcomingProject(models.Model):
-    nama_proyek = models.CharField(max_length=200, help_text="Contoh: Grand Agang Boulevard & Eco Precinct")
-    badge_info = models.CharField(max_length=100, help_text="Contoh: 12 Unit Tersisa, VIP Launching")
-    deskripsi = models.TextField()
-    lokasi = models.CharField(max_length=150, blank=True, null=True, help_text="Contoh: Hertasning Baru")
-    estimasi_serah_terima = models.CharField(max_length=100, help_text="Contoh: Serah Terima Q3 2026 atau Estimasi Q2 2026")
-    gambar = models.ImageField(upload_to='upcoming_projects/', blank=True, null=True, help_text="Diisi khusus untuk kartu highlight utama yang besar di sebelah kiri")
-    is_highlight_utama = models.BooleanField(
-        default=False, 
-        help_text="Centang jika proyek ini ditampilkan sebagai kartu bergambar besar di sebelah kiri"
+    # --- Kolom untuk Header Section (Diambil dari proyek urutan pertama / Highlight Utama) ---
+    tag_section = models.CharField(
+        max_length=100, 
+        default="● UPCOMING PRIVATE PHASE", 
+        help_text="Teks label kecil di bagian paling atas section"
     )
-    urutan_tampil = models.PositiveIntegerField(default=1)
+    judul_periode = models.CharField(
+        max_length=150, 
+        default="Spring / Summer 2026", 
+        help_text="Judul utama baris pertama"
+    )
+    subjudul_emas = models.CharField(
+        max_length=150, 
+        default="Dates Available for Handover", 
+        help_text="Sub-judul miring berwarna emas di baris kedua"
+    )
+    deskripsi_header = models.TextField(
+        default="Pemesanan tahap perdana untuk kawasan residensial terpadu dengan fasilitas clubhouse privat, jogging track hutan kota, dan gerbang akses RFID terpadu.",
+        help_text="Paragraf penjelasan di sebelah kanan judul utama"
+    )
+
+    # --- Kolom untuk Isi Kartu Proyek (Kartu Besar Kiri & Kartu Kecil Kanan) ---
+    nama_proyek = models.CharField(max_length=200, help_text="Contoh: Grand Agang Boulevard & Eco Precinct")
+    badge_info = models.CharField(max_length=100, help_text="Contoh: TAHAP 1 - OPEN PRE-BOOKING, 12 Unit Sisa, VIP Launch")
+    ikon_kartu = models.CharField(max_length=10, default="⌂", blank=True, null=True, help_text="Ikon khusus kartu kecil di kanan, contoh: ⌂ atau ≈")
+    deskripsi = models.TextField(help_text="Deskripsi singkat proyek di dalam kartu")
+    harga_mulai = models.CharField(max_length=100, blank=True, null=True, help_text="Khusus kartu besar kiri, contoh: Mulai Rp 720 Jt")
+    estimasi_serah_terima = models.CharField(max_length=100, help_text="Contoh: Serah Terima Juni 2026 atau Indikasi: Q3 2026")
+    gambar = models.ImageField(upload_to='upcoming_projects/', blank=True, null=True, help_text="Foto background khusus untuk kartu besar di sebelah kiri")
+    
+    # --- Pengaturan Posisi Kartu ---
+    is_highlight_utama = models.BooleanField(
+        default=False,
+        help_text="Centang (True) agar tampil sebagai Kartu Besar di Kiri. Biarkan kosong (False) untuk Kartu Kecil di Kanan."
+    )
+    urutan_tampil = models.PositiveIntegerField(default=1, help_text="Urutan tampil (isi angka 1 untuk proyek utama)")
 
     class Meta:
         ordering = ['urutan_tampil']
@@ -110,4 +147,5 @@ class UpcomingProject(models.Model):
         verbose_name_plural = 'Proyek Mendatang (Handover)'
 
     def __str__(self):
-        return self.nama_proyek
+        posisi = "Kartu Utama Kiri" if self.is_highlight_utama else "Kartu Samping Kanan"
+        return f"{self.nama_proyek} ({posisi})"
