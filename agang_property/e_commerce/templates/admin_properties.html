@@ -1,0 +1,39 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head">
+            <div><span class="admin-eyebrow">Katalog Hunian</span><h2>Kelola Properti</h2><p>Tambah unit baru dan pantau informasi properti yang tersimpan.</p></div>
+            <span class="status-pill">{{ total_properti }} unit</span>
+        </div>
+        <div class="admin-grid">
+            <div class="admin-panel admin-form-panel">
+                <h3>Tambah Properti</h3><p class="sub">Isi data utama di sini. Detail konstruksi dan promosi dapat dilengkapi dari Django Admin.</p>
+                <form method="post" enctype="multipart/form-data" class="admin-form-grid">
+                    {% csrf_token %}<input type="hidden" name="tambah_properti" value="1">
+                    <div class="admin-field wide"><label for="property-category">Kategori Hunian</label><select id="property-category" name="kategori" class="admin-input" required>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.nama_kategori }}</option>{% empty %}<option disabled>Buat kategori properti di Django Admin terlebih dahulu</option>{% endfor %}</select></div>
+                    <div class="admin-field wide"><label for="property-name">Nama Properti</label><input id="property-name" class="admin-input" type="text" name="nama_properti" required></div>
+                    <div class="admin-field"><label for="property-city">Kota</label><input id="property-city" class="admin-input" type="text" name="kota" value="Makassar" required></div>
+                    <div class="admin-field"><label for="property-location">Lokasi Detail</label><input id="property-location" class="admin-input" type="text" name="lokasi_detail" required></div>
+                    <div class="admin-field"><label for="property-price">Harga (Rp)</label><input id="property-price" class="admin-input" type="number" name="harga" min="0" required></div>
+                    <div class="admin-field"><label for="property-badge">Badge</label><input id="property-badge" class="admin-input" type="text" name="badge_status" value="SIAP HUNI"></div>
+                    <div class="admin-field"><label for="property-bedrooms">Kamar Tidur</label><input id="property-bedrooms" class="admin-input" type="text" name="kamar_tidur" value="2 KT" required></div>
+                    <div class="admin-field"><label for="property-bathrooms">Kamar Mandi</label><input id="property-bathrooms" class="admin-input" type="number" name="kamar_mandi" min="1" value="1" required></div>
+                    <div class="admin-field"><label for="property-area">Luas Bangunan (m²)</label><input id="property-area" class="admin-input" type="number" name="luas_bangunan" min="1" value="60" required></div>
+                    <div class="admin-field"><label for="property-title">Status Kepemilikan</label><input id="property-title" class="admin-input" type="text" name="status_kepemilikan" value="SHM (Hak Milik) + IMB / PBG"></div>
+                    <div class="admin-field wide"><label for="property-description">Deskripsi Singkat</label><textarea id="property-description" class="admin-input" name="deskripsi_singkat" rows="4" required></textarea></div>
+                    <div class="admin-field wide"><label for="property-image">Foto Utama</label><input id="property-image" class="admin-input" type="file" name="gambar_utama" accept="image/*" required></div>
+                    <div class="admin-field wide"><button class="admin-button gold" type="submit">Simpan Properti</button></div>
+                </form>
+            </div>
+            <div class="admin-panel">
+                <div class="admin-section-head"><div><h2>Daftar Properti</h2><p>Properti terbaru tampil di baris atas.</p></div></div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Properti</th><th>Kategori / Lokasi</th><th>Harga</th><th>Tampil</th></tr></thead><tbody>
+                    {% for prop in properties %}<tr><td><span class="table-primary">{{ prop.nama_properti }}</span><span class="table-secondary">{{ prop.kode_properti }}</span></td><td>{{ prop.kategori.nama_kategori }}<span class="table-secondary">{{ prop.lokasi_detail }}, {{ prop.kota }}</span></td><td>Rp {{ prop.harga_format_titik }}</td><td>{% if prop.tampil_di_home %}<span class="status-pill live">Aktif</span>{% else %}<span class="status-pill">Disembunyikan</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="admin-empty">Belum ada properti.</td></tr>{% endfor %}
+                </tbody></table></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel admin-form-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Artikel & Metadata</span><h2>Edit Artikel</h2><p>Perbarui isi, metadata pencarian, dan status publikasi.</p></div><a class="admin-button secondary" href="{% url 'admin_articles' %}">Kembali ke Daftar Artikel</a></div>
+        {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}<div class="admin-form-grid">
+                {% for field in form %}
+                    <div class="admin-field {% if field.name == 'isi' or field.name == 'poin_utama' or field.name == 'jawaban_ringkas' or field.name == 'ringkasan' or field.name == 'deskripsi_seo' %}wide{% endif %}">
+                        {% if field.name == 'unggulan' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+                        {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                        {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Perubahan</button>{% if article.status == 'published' %}<a class="admin-button secondary" href="{{ article.get_absolute_url }}" target="_blank" rel="noopener">Lihat Artikel Publik</a>{% endif %}</div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Tampilan Halaman Utama</span><h2>Hero Slide Beranda</h2><p>Atur gambar dan pesan utama yang berganti otomatis di bagian paling atas halaman home.</p></div><span class="status-pill live">{{ active_slide_count }} aktif · {{ slide_count }} total</span></div>
+        <div class="admin-grid">
+            <div class="admin-panel admin-form-panel">
+                <h3>Tambah Slide</h3><p class="sub">Gunakan gambar horizontal beresolusi tinggi. Slide aktif tampil menurut urutan terkecil lebih dahulu.</p>
+                {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}<input type="hidden" name="tambah_hero_slide" value="1">
+                    <div class="admin-form-grid">
+                        {% for field in form %}
+                            <div class="admin-field {% if field.name == 'deskripsi' %}wide{% endif %}">
+                                {% if field.name == 'aktif' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+                                {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                                {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Hero Slide</button><span class="admin-note">Gambar slide disimpan di folder media `hero_slides/`.</span></div>
+                </form>
+            </div>
+            <div class="admin-panel">
+                <div class="admin-section-head"><div><h2>Slide Tersimpan</h2><p>Aktifkan hanya slide yang ingin ditampilkan kepada pengunjung.</p></div></div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Slide</th><th>Urutan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+                    {% for slide in slides %}<tr>
+                        <td><div style="display:flex;align-items:center;gap:10px;min-width:210px">{% if slide.gambar %}<img src="{{ slide.gambar.url }}" alt="" style="width:74px;height:48px;object-fit:cover;border-radius:5px">{% endif %}<span><span class="table-primary">{{ slide.judul }}</span><span class="table-secondary">{{ slide.judul_aksen }}</span></span></div></td>
+                        <td>{{ slide.urutan }}</td>
+                        <td>{% if slide.aktif %}<span class="status-pill live">Aktif</span>{% else %}<span class="status-pill">Nonaktif</span>{% endif %}</td>
+                        <td><div class="admin-actions"><a class="admin-button secondary" href="{% url 'admin_hero_slide_edit' slide.pk %}">Edit</a><form class="admin-inline-form" method="post" action="{% url 'admin_hero_slide_toggle' slide.pk %}">{% csrf_token %}<button class="admin-button secondary" type="submit">{% if slide.aktif %}Nonaktifkan{% else %}Aktifkan{% endif %}</button></form><form class="admin-inline-form" method="post" action="{% url 'admin_hero_slide_delete' slide.pk %}" onsubmit="return confirm('Hapus slide ini?')">{% csrf_token %}<button class="admin-button danger" type="submit">Hapus</button></form></div></td>
+                    </tr>{% empty %}<tr><td colspan="4" class="admin-empty">Belum ada slide. Halaman home masih memakai banner bawaan sampai slide pertama ditambahkan.</td></tr>{% endfor %}
+                </tbody></table></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

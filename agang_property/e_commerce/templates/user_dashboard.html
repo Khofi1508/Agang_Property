@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,7 +9,7 @@
 <body class="bg-[#121212] text-white min-h-screen">
     <!-- Navbar Pengguna -->
     <nav class="bg-[#1c1c1c] border-b border-gray-800 px-8 py-4 flex justify-between items-center">
-        <a href="{% url 'home' %}" class="text-xl font-bold text-yellow-500">AGANG PROPERTY</a>
+        <a href="{% url 'home' %}" class="block"><img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property" class="w-48 max-w-full h-auto"></a>
         <div class="flex items-center gap-4 text-sm">
             <a href="{% url 'home' %}" class="text-gray-300 hover:text-yellow-400">Halaman Home</a>
             <a href="{% url 'user_edit_profile' %}" class="bg-[#2a2a2a] border border-yellow-500/40 px-3 py-1.5 rounded hover:bg-yellow-500 hover:text-black transition">Edit Profil Saya</a>
@@ -86,7 +87,7 @@
                             <span class="text-xs text-yellow-500 uppercase">{{ prop.lokasi_detail }}</span>
                             <h3 class="font-bold text-lg mt-1">{{ prop.nama_properti }}</h3>
                             <p class="text-yellow-400 font-bold mt-1">Rp {{ prop.harga }}</p>
-                            <p class="text-gray-400 text-xs mt-2">{{ prop.kamar_tidur }} KT • {{ prop.kamar_mandi }} KM • {{ prop.luas_bangunan }}m² • {{ prop.status_furnitur_sertifikat }}</p>
+                            <p class="text-gray-400 text-xs mt-2">{{ prop.kamar_tidur }} • {{ prop.kamar_mandi }} KM • {{ prop.luas_bangunan }}m² • {{ prop.status_kepemilikan }}</p>
                         </div>
                     </div>
                     {% empty %}

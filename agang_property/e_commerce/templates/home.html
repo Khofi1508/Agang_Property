@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -71,46 +72,8 @@
             justify-content: space-between;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-icon {
-            width: 38px;
-            height: 38px;
-            background: var(--burgundy-dark);
-            border: 1px solid rgba(234, 179, 8, 0.3);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gold);
-            font-weight: 700;
-        }
-
-        .brand-text {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-        }
-
-        .brand-title {
-            font-family: var(--font-serif);
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-
-        .brand-sub {
-            font-size: 9px;
-            letter-spacing: 2.5px;
-            color: var(--text-gray);
-            text-transform: uppercase;
-        }
-
+        .brand { display: flex; align-items: center; }
+        .brand-logo { display: block; width: 174px; max-height: 58px; object-fit: contain; }
         .nav-links {
             display: flex;
             gap: 32px;
@@ -165,14 +128,33 @@
         /* ================= HERO SECTION ================= */
         .hero {
             position: relative;
+            isolation: isolate;
+            overflow: hidden;
             min-height: 620px;
             display: flex;
             align-items: center;
             padding: 80px 0 70px;
-            background: linear-gradient(90deg, rgba(14, 15, 18, 0.92) 0%, rgba(14, 15, 18, 0.72) 55%, rgba(14, 15, 18, 0.45) 100%),
-                        url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&q=85') center/cover no-repeat;
+            background-color: var(--bg-main);
             border-bottom: 1px solid var(--border-dark);
         }
+
+        .hero-backgrounds { position:absolute; inset:0; z-index:-2; }
+        .hero-slide-bg { position:absolute; inset:0; background-position:center; background-size:cover; background-repeat:no-repeat; opacity:0; transform:scale(1.025); transition:opacity .8s ease, transform 6s ease; }
+        .hero-slide-bg.active { opacity:1; transform:scale(1); }
+        .hero::before { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, rgba(14,15,18,.93) 0%, rgba(14,15,18,.76) 53%, rgba(14,15,18,.48) 100%); }
+        .hero > .container { position:relative; z-index:1; width:100%; }
+        .hero-copy { display:none; max-width:780px; }
+        .hero-copy.active { display:block; animation:hero-copy-in .42s ease both; }
+        @keyframes hero-copy-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .hero-cta { display:inline-flex; align-items:center; gap:9px; margin:0 0 28px; color:var(--gold-bright); font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+        .hero-cta:hover { color:white; }
+        .hero-carousel-controls { display:flex; align-items:center; gap:10px; margin:0 0 18px; }
+        .hero-arrow { width:31px; height:31px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.22); border-radius:50%; color:#f8fafc; background:rgba(17,18,21,.46); cursor:pointer; transition:.2s; }
+        .hero-arrow:hover { border-color:var(--gold); color:var(--gold); }
+        .hero-dots { display:flex; align-items:center; gap:6px; }
+        .hero-dot { width:17px; height:3px; padding:0; border:0; border-radius:99px; background:rgba(255,255,255,.38); cursor:pointer; transition:width .2s,background .2s; }
+        .hero-dot.active { width:31px; background:var(--gold-bright); }
+        .hero-slide-count { margin-left:2px; color:#d1d5db; font-size:9px; font-weight:700; letter-spacing:.08em; }
 
         .badge-masterpiece {
             display: inline-flex;
@@ -209,7 +191,7 @@
             max-width: 600px;
             color: var(--text-gray);
             font-size: 15px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         /* Search Bar Box */
@@ -911,6 +893,10 @@
             .hero h1 { font-size: 40px; }
             .nav-links { display: none; }
         }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-slide-bg, .hero-dot { transition: none; }
+            .hero-copy.active { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -919,17 +905,14 @@
     <header class="navbar">
         <div class="container nav-content">
             <a href="{% url 'home' %}" class="brand">
-                <div class="brand-icon">⌂</div>
-                <div class="brand-text">
-                    <span class="brand-title">AGANG</span>
-                    <span class="brand-sub">PROPERTY</span>
-                </div>
+                <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
             </a>
 
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}" class="active">HOME</a></li>
                 <li><a href="#Gallery">GALLERY</a></li>
                 <li><a href="{% url 'catalog' %}">CATALOG</a></li>
+                <li><a href="{% url 'article_list' %}">ARTIKEL</a></li>
                 <li><a href="#upcoming">ABOUT US</a></li>
                 <li><a href="#footer">CONTACT</a></li>
             </ul>
@@ -951,20 +934,31 @@
 
     <!-- ================= HERO SECTION ================= -->
     <section class="hero">
+        <div class="hero-backgrounds" aria-hidden="true">
+            {% for slide in hero_slides %}
+                <div class="hero-slide-bg {% if forloop.first %}active{% endif %}" data-hero-bg data-index="{{ forloop.counter0 }}" style="background-image:url('{{ slide.gambar.url }}')"></div>
+            {% empty %}
+                <div class="hero-slide-bg active" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=85')"></div>
+            {% endfor %}
+        </div>
         <div class="container">
-            <div class="badge-masterpiece">
-                <span>●</span> MASTERPIECE COLLECTION 2025/2026
+            <div class="hero-copy-stack">
+                {% for slide in hero_slides %}
+                    <div class="hero-copy {% if forloop.first %}active{% endif %}" data-hero-copy data-index="{{ forloop.counter0 }}" {% if not forloop.first %}aria-hidden="true"{% endif %}>
+                        <div class="badge-masterpiece"><span>●</span> {{ slide.tagline }}</div>
+                        <h1>{{ slide.judul }}<span>{{ slide.judul_aksen }}</span></h1>
+                        <p class="hero-desc">{{ slide.deskripsi }}</p>
+                        <a class="hero-cta" href="#catalog">{{ slide.label_tombol }} <span aria-hidden="true">→</span></a>
+                    </div>
+                {% empty %}
+                    <div class="hero-copy active" data-hero-copy data-index="0">
+                        <div class="badge-masterpiece"><span>●</span> MASTERPIECE COLLECTION 2025/2026</div>
+                        <h1>Anything You Want,<span>Ready in Here.</span></h1>
+                        <p class="hero-desc">Temukan hunian impian dengan arsitektur eksklusif, kepastian legalitas SHM, dan nilai investasi masa depan yang prestisius bersama Agang Property.</p>
+                        <a class="hero-cta" href="#catalog">JELAJAHI PROPERTI <span aria-hidden="true">→</span></a>
+                    </div>
+                {% endfor %}
             </div>
-
-            <h1>
-                Anything You Want,
-                <span>Ready in Here.</span>
-            </h1>
-
-            <p class="hero-desc">
-                Temukan hunian impian dengan arsitektur eksklusif, kepastian legalitas SHM,
-                dan nilai investasi masa depan yang prestisius bersama Agang Property.
-            </p>
 
             <!-- Form Pencarian Properti -->
             <form method="GET" action="{% url 'catalog' %}" class="search-bar">
@@ -1017,6 +1011,18 @@
                 <div><span class="icon">%</span> Bunga Promo KPR Ringan</div>
                 <div><span class="icon">📅</span> Spring / Summer 2026 Ready Handover</div>
             </div>
+            {% if hero_slides|length > 1 %}
+                <div class="hero-carousel-controls" aria-label="Navigasi hero slide">
+                    <button class="hero-arrow" type="button" data-hero-prev aria-label="Slide sebelumnya">‹</button>
+                    <div class="hero-dots" role="group" aria-label="Pilih slide">
+                        {% for slide in hero_slides %}
+                            <button class="hero-dot {% if forloop.first %}active{% endif %}" type="button" data-hero-dot="{{ forloop.counter0 }}" aria-label="Tampilkan slide {{ forloop.counter }}" {% if forloop.first %}aria-current="true"{% endif %}></button>
+                        {% endfor %}
+                    </div>
+                    <span class="hero-slide-count"><span data-hero-current>01</span> / {{ hero_slides|length|stringformat:'02d' }}</span>
+                    <button class="hero-arrow" type="button" data-hero-next aria-label="Slide berikutnya">›</button>
+                </div>
+            {% endif %}
         </div>
     </section>
 
@@ -1064,12 +1070,12 @@
 
                         <div class="prop-specs">
                             <div class="spec-item"><span class="spec-icon">❖</span> {{ prop.jumlah_lantai }} Lt</div>
-                            <div class="spec-item"><span class="spec-icon">🛏️</span> {{ prop.kamar_tidur }} KT</div>
+                            <div class="spec-item"><span class="spec-icon">🛏️</span> {{ prop.kamar_tidur }}</div>
                             <div class="spec-item"><span class="spec-icon">🚿</span> {{ prop.kamar_mandi }} KM</div>
                             <div class="spec-item"><span class="spec-icon">📐</span> {{ prop.luas_bangunan }}m²</div>
                         </div>
 
-                        <a href="#" class="btn-detail">DETAIL UNIT →</a>
+                        <a href="{% url 'property_detail' prop.id %}" class="btn-detail">DETAIL UNIT →</a>
                     </div>
                 </div>
                 {% empty %}
@@ -1093,7 +1099,7 @@
                             <div class="spec-item"><span class="spec-icon">🚿</span> 1 KM</div>
                             <div class="spec-item"><span class="spec-icon">📐</span> 60m²</div>
                         </div>
-                        <a href="#" class="btn-detail">DETAIL UNIT →</a>
+                        <a href="{% url 'property_detail' prop.id %}" class="btn-detail">DETAIL UNIT →</a>
                     </div>
                 </div>
 
@@ -1116,7 +1122,7 @@
                             <div class="spec-item"><span class="spec-icon">🚿</span> 2 KM</div>
                             <div class="spec-item"><span class="spec-icon">📐</span> 110m²</div>
                         </div>
-                        <a href="#" class="btn-detail">DETAIL UNIT →</a>
+                        <a href="{% url 'property_detail' prop.id %}" class="btn-detail">DETAIL UNIT →</a>
                     </div>
                 </div>
 
@@ -1139,7 +1145,7 @@
                             <div class="spec-item"><span class="spec-icon">🚿</span> 3 KM</div>
                             <div class="spec-item"><span class="spec-icon">📐</span> 145m²</div>
                         </div>
-                        <a href="#" class="btn-detail">DETAIL UNIT →</a>
+                        <a href="{% url 'property_detail' prop.id %}" class="btn-detail">DETAIL UNIT →</a>
                     </div>
                 </div>
                 {% endfor %}
@@ -1331,11 +1337,7 @@
             <div class="footer-grid">
                 <div>
                     <div class="brand">
-                        <div class="brand-icon">⌂</div>
-                        <div class="brand-text">
-                            <span class="brand-title">AGANG</span>
-                            <span class="brand-sub">PROPERTY</span>
-                        </div>
+                        <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
                     </div>
                     <p class="footer-desc">
                         Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.
@@ -1352,7 +1354,7 @@
                     <div class="footer-links-grid">
                         <a href="{% url 'home' %}">Home</a>
                         <a href="#catalog">Gallery</a>
-                        <a href="#catalog">Catalog</a>
+                        <a href="{% url 'catalog' %}">Catalog</a>
                         <a href="#footer">Contact</a>
                         <a href="#upcoming">About Us</a>
                     </div>
@@ -1379,5 +1381,49 @@
         </div>
     </footer>
 
+    <script>
+        (() => {
+            const hero = document.querySelector('.hero');
+            if (!hero) return;
+            const backgrounds = [...hero.querySelectorAll('[data-hero-bg]')];
+            const copies = [...hero.querySelectorAll('[data-hero-copy]')];
+            const dots = [...hero.querySelectorAll('[data-hero-dot]')];
+            const currentLabel = hero.querySelector('[data-hero-current]');
+            if (copies.length < 2) return;
+
+            let current = 0;
+            let timer;
+            const showSlide = (index) => {
+                current = (index + copies.length) % copies.length;
+                backgrounds.forEach((item, i) => item.classList.toggle('active', i === current));
+                copies.forEach((item, i) => {
+                    item.classList.toggle('active', i === current);
+                    item.setAttribute('aria-hidden', i === current ? 'false' : 'true');
+                });
+                dots.forEach((item, i) => {
+                    item.classList.toggle('active', i === current);
+                    if (i === current) item.setAttribute('aria-current', 'true');
+                    else item.removeAttribute('aria-current');
+                });
+                if (currentLabel) currentLabel.textContent = String(current + 1).padStart(2, '0');
+            };
+            const stopTimer = () => window.clearInterval(timer);
+            const startTimer = () => {
+                stopTimer();
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    timer = window.setInterval(() => showSlide(current + 1), 6500);
+                }
+            };
+
+            hero.querySelector('[data-hero-prev]')?.addEventListener('click', () => { showSlide(current - 1); startTimer(); });
+            hero.querySelector('[data-hero-next]')?.addEventListener('click', () => { showSlide(current + 1); startTimer(); });
+            dots.forEach((dot) => dot.addEventListener('click', () => { showSlide(Number(dot.dataset.heroDot)); startTimer(); }));
+            hero.addEventListener('mouseenter', stopTimer);
+            hero.addEventListener('mouseleave', startTimer);
+            hero.addEventListener('focusin', stopTimer);
+            hero.addEventListener('focusout', (event) => { if (!hero.contains(event.relatedTarget)) startTimer(); });
+            startTimer();
+        })();
+    </script>
 </body>
 </html>

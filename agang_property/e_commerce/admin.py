@@ -1,5 +1,55 @@
 from django.contrib import admin
-from .models import CustomerProfile, Category, Property, Testimonial, UpcomingProject
+from .models import (
+    Article,
+    ArticleCategory,
+    CustomerProfile,
+    Category,
+    HeroSlide,
+    Property,
+    Testimonial,
+    UpcomingProject,
+    SurveyBooking,
+)
+
+
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = ('judul', 'judul_aksen', 'urutan', 'aktif', 'diperbarui')
+    list_filter = ('aktif',)
+    list_editable = ('urutan', 'aktif')
+    search_fields = ('judul', 'judul_aksen', 'tagline', 'deskripsi')
+
+
+@admin.register(ArticleCategory)
+class ArticleCategoryAdmin(admin.ModelAdmin):
+    list_display = ('nama_kategori', 'slug')
+    search_fields = ('nama_kategori',)
+    prepopulated_fields = {'slug': ('nama_kategori',)}
+
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('judul', 'kategori', 'status', 'unggulan', 'tanggal_terbit', 'diperbarui')
+    list_filter = ('status', 'unggulan', 'kategori')
+    search_fields = ('judul', 'ringkasan', 'isi', 'kata_kunci')
+    prepopulated_fields = {'slug': ('judul',)}
+    readonly_fields = ('dibuat', 'diperbarui')
+    fieldsets = (
+        ('Konten artikel', {
+            'fields': ('judul', 'slug', 'kategori', 'ringkasan', 'jawaban_ringkas', 'poin_utama', 'isi', 'gambar_utama')
+        }),
+        ('SEO dan GEO', {
+            'fields': ('judul_seo', 'deskripsi_seo', 'kata_kunci', 'url_canonical')
+        }),
+        ('Publikasi', {
+            'fields': ('penulis', 'status', 'unggulan', 'tanggal_terbit', 'dibuat', 'diperbarui')
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not obj.penulis_id:
+            obj.penulis = request.user
+        super().save_model(request, obj, form, change)
 
 @admin.register(CustomerProfile)
 class CustomerProfileAdmin(admin.ModelAdmin):
@@ -40,4 +90,10 @@ class UpcomingProjectAdmin(admin.ModelAdmin):
             )
         }),
     )
-    
+
+@admin.register(SurveyBooking)
+class SurveyBookingAdmin(admin.ModelAdmin):
+    list_display = ('nama_pemohon', 'properti', 'tanggal_survei', 'sesi_waktu', 'no_whatsapp', 'status')
+    list_filter = ('status', 'tanggal_survei', 'sesi_waktu')
+    search_fields = ('nama_pemohon', 'no_whatsapp', 'properti__nama_properti')
+    list_editable = ('status',)

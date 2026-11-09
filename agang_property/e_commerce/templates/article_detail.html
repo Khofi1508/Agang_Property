@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ article.judul_seo|default:article.judul }} | Agang Property</title>
+    <meta name="description" content="{{ meta_description }}">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Agang Property">
+    <meta property="og:title" content="{{ article.judul_seo|default:article.judul }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    {% if article.gambar_utama %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ article.gambar_utama.url }}">{% endif %}
+    <meta property="article:published_time" content="{{ article.tanggal_terbit|date:'c' }}">
+    <meta property="article:modified_time" content="{{ article.diperbarui|date:'c' }}">
+    {% if article.kategori %}<meta property="article:section" content="{{ article.kategori.nama_kategori }}">{% endif %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="application/ld+json">{{ json_ld }}</script>
+    <style>
+        :root { color-scheme:dark; --bg:#111215; --panel:#1b1c20; --gold:#facc15; --red:#7f2d37; --text:#f8fafc; --muted:#a3aab5; --line:rgba(255,255,255,.08); }
+        * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:15px/1.75 'Plus Jakarta Sans',sans-serif; }
+        a { color:inherit; text-decoration:none; } .wrap { width:min(1120px,calc(100% - 40px)); margin:auto; }
+        header { position:sticky; top:0; z-index:5; background:rgba(17,18,21,.94); border-bottom:1px solid var(--line); backdrop-filter:blur(12px); }
+        .nav { min-height:78px; display:flex; align-items:center; justify-content:space-between; gap:20px; } .brand img { display:block; width:185px; max-height:62px; object-fit:contain; }
+        nav { display:flex; gap:26px; color:#c9cbd0; font-size:11px; font-weight:700; letter-spacing:.08em; } nav a:hover { color:var(--gold); }
+        .breadcrumbs { color:var(--muted); font-size:11px; margin:28px 0 22px; } .breadcrumbs a:hover { color:var(--gold); }
+        .article { max-width:850px; margin:0 auto; padding:8px 0 80px; } .category { color:var(--gold); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; }
+        h1,h2,h3 { font-family:'Playfair Display',Georgia,serif; } h1 { font-size:clamp(34px,5vw,58px); line-height:1.13; margin:12px 0 14px; }
+        .dek { color:#cbd5e1; font-size:17px; line-height:1.7; margin:0; } .byline { display:flex; flex-wrap:wrap; gap:10px 20px; color:var(--muted); font-size:11px; margin:20px 0 28px; }
+        .cover { width:100%; max-height:500px; object-fit:cover; border-radius:13px; border:1px solid var(--line); margin-bottom:30px; }
+        .answer { border:1px solid rgba(250,204,21,.25); border-left:4px solid var(--gold); border-radius:9px; padding:20px 22px; background:var(--panel); margin:0 0 28px; }
+        .answer-label { display:block; color:var(--gold); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
+        .answer p { margin:0; color:#f1f5f9; font-size:15px; }
+        .key-points { margin:0 0 32px; padding:20px 24px 20px 42px; border-radius:9px; background:var(--panel); color:#d1d5db; font-size:13px; }
+        .key-points li { padding:3px 0; } .key-points li::marker { color:var(--gold); }
+        .body-copy { color:#e5e7eb; font-size:16px; line-height:1.9; overflow-wrap:anywhere; } .body-copy p { margin:0 0 22px; }
+        .author-box { margin-top:38px; padding:18px 20px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:#cbd5e1; font-size:12px; }
+        .related { padding:36px 0 76px; border-top:1px solid var(--line); } .related h2 { margin:0 0 20px; font-size:30px; }
+        .related-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; } .related-card { padding:18px; background:var(--panel); border:1px solid var(--line); border-radius:9px; }
+        .related-card span { color:var(--gold); font-size:9px; text-transform:uppercase; letter-spacing:.1em; } .related-card h3 { font-size:19px; line-height:1.3; margin:8px 0; } .related-card p { margin:0; color:var(--muted); font-size:11px; }
+        footer { padding:24px 0; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+        .footer-row { display:flex; align-items:center; justify-content:space-between; gap:18px; } .footer-logo { display:block; width:145px; max-height:52px; object-fit:contain; }
+        @media(max-width:650px) { .wrap { width:calc(100% - 28px); } nav { gap:12px; font-size:9px; } nav a:nth-child(2) { display:none; } .nav { min-height:68px; } .breadcrumbs { margin-top:20px; } .dek { font-size:15px; } .body-copy { font-size:14px; } .related-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<header><div class="wrap nav">
+    <a href="{% url 'home' %}" class="brand"><img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property"></a>
+    <nav><a href="{% url 'home' %}">HOME</a><a href="{% url 'catalog' %}">KATALOG</a><a href="{% url 'article_list' %}">ARTIKEL</a></nav>
+</div></header>
+<main class="wrap">
+    <div class="breadcrumbs"><a href="{% url 'home' %}">Beranda</a> &nbsp;›&nbsp; <a href="{% url 'article_list' %}">Artikel</a>{% if article.kategori %} &nbsp;›&nbsp; {{ article.kategori.nama_kategori }}{% endif %}</div>
+    <article class="article">
+        {% if article.kategori %}<span class="category">{{ article.kategori.nama_kategori }}</span>{% else %}<span class="category">Panduan Properti</span>{% endif %}
+        <h1>{{ article.judul }}</h1>
+        <p class="dek">{{ article.ringkasan }}</p>
+        <div class="byline"><span>Oleh {{ article_author }}</span><time datetime="{{ article.tanggal_terbit|date:'c' }}">{{ article.tanggal_terbit|date:'j F Y' }}</time><span>Diperbarui {{ article.diperbarui|date:'j F Y' }}</span></div>
+        {% if article.gambar_utama %}<img class="cover" src="{{ article.gambar_utama.url }}" alt="{{ article.judul }}">{% endif %}
+        {% if article.jawaban_ringkas %}<section class="answer" aria-label="Jawaban singkat"><span class="answer-label">Jawaban singkat</span><p>{{ article.jawaban_ringkas|linebreaksbr }}</p></section>{% endif %}
+        {% if key_points %}<section aria-label="Poin utama"><h2>Poin utama</h2><ul class="key-points">{% for point in key_points %}<li>{{ point }}</li>{% endfor %}</ul></section>{% endif %}
+        <div class="body-copy">{{ article.isi|linebreaks }}</div>
+        <div class="author-box">Ditulis oleh <strong>{{ article_author }}</strong>{% if article.kategori %} · Topik: {{ article.kategori.nama_kategori }}{% endif %}</div>
+    </article>
+    {% if related_articles %}<section class="related"><h2>Artikel lainnya</h2><div class="related-grid">
+        {% for related in related_articles %}<a class="related-card" href="{{ related.get_absolute_url }}"><span>{{ related.kategori.nama_kategori|default:'Artikel' }}</span><h3>{{ related.judul }}</h3><p>{{ related.ringkasan }}</p></a>{% endfor %}
+    </div></section>{% endif %}
+</main>
+<footer><div class="wrap footer-row"><img class="footer-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property"><span>© 2026 Agang Property · <a href="{% url 'article_list' %}">Semua artikel</a> · <a href="{% url 'sitemap' %}">Sitemap</a></span></div></footer>
+</body>
+</html>

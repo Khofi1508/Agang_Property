@@ -1,0 +1,52 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Konten & Pencarian</span><h2>Kelola Artikel</h2><p>Tulis artikel, atur metadata, dan tentukan kapan artikel tampil di website.</p></div><span class="status-pill">{{ total_artikel_terbit }} terbit · {{ total_artikel }} total</span></div>
+        <div class="admin-grid">
+            <div class="admin-panel admin-form-panel">
+                <h3>Tulis Artikel Baru</h3><p class="sub">Utamakan informasi yang berguna dan spesifik. Slug akan dibuat otomatis bila dibiarkan kosong.</p>
+                {% if article_form.non_field_errors %}<div class="admin-error">{{ article_form.non_field_errors }}</div>{% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}<input type="hidden" name="tambah_artikel" value="1">
+                    <div class="admin-form-grid">
+                        {% for field in article_form %}
+                            <div class="admin-field {% if field.name == 'isi' or field.name == 'poin_utama' or field.name == 'jawaban_ringkas' or field.name == 'ringkasan' or field.name == 'deskripsi_seo' %}wide{% endif %}">
+                                {% if field.name == 'unggulan' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+                                {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                                {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Artikel</button><span class="admin-note">Artikel berstatus draft tidak tampil untuk pengunjung dan tidak masuk sitemap publik.</span></div>
+                </form>
+            </div>
+            <div class="admin-panel admin-form-panel" id="article-categories">
+                <h3>Kategori Artikel</h3><p class="sub">Kelompokkan konten agar pembaca mudah menemukan topik.</p>
+                <form method="post">
+                    {% csrf_token %}<input type="hidden" name="tambah_kategori_artikel" value="1">
+                    <div class="admin-form-grid">{% for field in article_category_form %}<div class="admin-field wide"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>{% endfor %}</div>
+                    <div class="admin-form-actions"><button class="admin-button" type="submit">Tambah Kategori</button></div>
+                </form>
+                <div class="admin-category-list">{% for category in article_categories %}<span class="admin-category-pill">{{ category.nama_kategori }}</span>{% empty %}<span class="admin-note">Belum ada kategori.</span>{% endfor %}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><h2>Daftar Artikel</h2><p>Kelola draft dan artikel yang sudah diterbitkan.</p></div><a class="admin-button secondary" href="{% url 'article_list' %}" target="_blank">Lihat Halaman Publik</a></div>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Judul Artikel</th><th>Kategori</th><th>Status</th><th>Diperbarui</th><th>Aksi</th></tr></thead><tbody>
+            {% for article in articles %}<tr>
+                <td><span class="table-primary">{{ article.judul }}</span><span class="table-secondary">/artikel/{{ article.slug }}/</span></td>
+                <td>{{ article.kategori.nama_kategori|default:'-' }}</td>
+                <td><span class="status-pill {% if article.status == 'published' %}live{% endif %}">{{ article.get_status_display }}</span></td>
+                <td>{{ article.diperbarui|date:'j M Y' }}</td>
+                <td><div class="admin-actions"><a class="admin-button secondary" href="{% url 'admin_article_edit' article.pk %}">Edit</a>{% if article.status == 'published' %}<a class="admin-button secondary" href="{{ article.get_absolute_url }}" target="_blank" rel="noopener">Lihat</a>{% endif %}<form class="admin-inline-form" method="post" action="{% url 'admin_article_delete' article.pk %}" onsubmit="return confirm('Hapus artikel ini?')">{% csrf_token %}<button class="admin-button danger" type="submit">Hapus</button></form></div></td>
+            </tr>{% empty %}<tr><td colspan="5" class="admin-empty">Belum ada artikel. Gunakan formulir di atas untuk membuat artikel pertama.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </div>
+</section>
+{% endblock %}

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,10 +8,11 @@
 </head>
 <body class="bg-[#121212] text-white min-h-screen flex items-center justify-center p-6">
     <div class="bg-[#1c1c1c] border border-yellow-600/30 rounded-xl p-8 w-full max-w-lg">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl font-bold text-yellow-500">EDIT PROFIL SAYA</h1>
+        <div class="flex justify-between items-center mb-5">
+            <a href="{% url 'home' %}"><img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property" class="w-40 max-w-full h-auto"></a>
             <a href="{% url 'user_dashboard' %}" class="text-sm text-gray-400 hover:text-white">← Kembali ke Dashboard</a>
         </div>
+        <h1 class="text-xl font-bold text-yellow-500 mb-5">EDIT PROFIL SAYA</h1>
 
         <form method="POST" enctype="multipart/form-data" class="space-y-4 text-sm">
             {% csrf_token %}
