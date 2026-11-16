@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeri {{ prop.nama_properti }} - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#111215;--card:#191a1e;--gold:#facc15;--muted:#a1a1aa;--line:#2a2b30}
+        *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8fafc;font:15px 'Plus Jakarta Sans',sans-serif;line-height:1.6}
+        a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 36px));margin:auto}.nav{border-bottom:1px solid var(--line);padding:16px 0}.navin{display:flex;justify-content:space-between;align-items:center}.logo{width:170px;max-height:56px;object-fit:contain}.back{color:var(--gold);font-size:13px;font-weight:700}.hero{padding:42px 0 26px}.eyebrow{color:var(--gold);text-transform:uppercase;letter-spacing:1px;font-size:11px;font-weight:700}.hero h1{font:600 clamp(30px,5vw,48px) 'Playfair Display',serif;margin:7px 0}.hero p{color:var(--muted);margin:0}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:8px 0 44px}.photo{position:relative;min-height:220px;aspect-ratio:4/3;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card)}.photo.feature{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}.photo img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .35s}.photo:hover img{transform:scale(1.035)}.caption{position:absolute;inset:auto 0 0;padding:35px 15px 13px;background:linear-gradient(transparent,rgba(0,0,0,.82));font-size:13px}.video-section{padding:14px 0 70px}.video-section h2{font:600 30px 'Playfair Display',serif}.video-frame{overflow:hidden;aspect-ratio:16/9;border-radius:14px;background:var(--card);border:1px solid var(--line)}.video-frame iframe{width:100%;height:100%;border:0}.empty{padding:26px;border-radius:10px;background:var(--card);color:var(--muted)}.actions{display:flex;gap:10px;margin-top:20px}.button{display:inline-block;padding:12px 16px;border-radius:7px;background:var(--gold);color:#171717;font-weight:700;font-size:12px}.button.alt{background:#28292d;color:#eee}
+        @media(max-width:760px){.gallery{grid-template-columns:repeat(2,1fr)}.photo.feature{grid-column:span 2;grid-row:auto;aspect-ratio:4/3}.photo{min-height:170px}.logo{width:140px}}
+        @media(max-width:460px){.gallery{gap:9px}.photo{min-height:130px;border-radius:8px}.caption{font-size:11px;padding:28px 10px 8px}.actions{flex-direction:column}}
+    </style>
+</head>
+<body>
+    <header class="nav"><div class="wrap navin"><a href="{% url 'home' %}">{% include 'partials/site_logo_image.html' with logo_class='logo' %}</a><a class="back" href="{% url 'property_detail' prop.pk %}">← Kembali ke detail unit</a></div></header>
+    <main class="wrap">
+        <section class="hero"><span class="eyebrow">Galeri Properti · {{ prop.kode_properti }}</span><h1>{{ prop.nama_properti }}</h1><p>{{ prop.lokasi_detail }}, {{ prop.kota }} · {{ prop.deskripsi_singkat }}</p></section>
+        <section class="gallery" aria-label="Foto {{ prop.nama_properti }}">
+            {% if prop.gambar_utama %}<a class="photo feature" href="{{ prop.gambar_utama.url }}" target="_blank" rel="noopener"><img src="{{ prop.gambar_utama.url }}" alt="Tampak utama {{ prop.nama_properti }}"><span class="caption">Tampak utama</span></a>{% endif %}
+            {% for foto in gallery_images %}<a class="photo" href="{{ foto.gambar.url }}" target="_blank" rel="noopener"><img src="{{ foto.gambar.url }}" alt="{{ foto.keterangan|default:prop.nama_properti }}"><span class="caption">{{ foto.keterangan|default:'Foto properti' }}</span></a>{% endfor %}
+        </section>
+        {% if youtube_embed_url %}
+            <section class="video-section"><span class="eyebrow">Video Properti</span><h2>Jelajahi unit ini</h2><div class="video-frame"><iframe src="{{ youtube_embed_url }}" title="Video {{ prop.nama_properti }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></section>
+        {% elif prop.youtube_video_url %}
+            <section class="video-section"><div class="empty">Tautan YouTube belum valid. Perbarui tautan video pada data properti.</div></section>
+        {% endif %}
+        <div class="actions">{% if is_sold %}<span class="empty">Properti ini sudah berstatus SOLD dan tidak menerima DP baru. <a href="{% url 'catalog' %}" style="color:var(--gold)">Lihat unit lainnya →</a></span>{% else %}<a class="button" href="{% url 'payment_create' prop.pk %}">Lanjut ke Down Payment</a><a class="button alt" href="{% url 'property_detail' prop.pk %}#booking-section">Jadwalkan survei</a>{% endif %}</div>
+    </main>
+</body>
+</html>

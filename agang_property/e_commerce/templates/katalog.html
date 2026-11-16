@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katalog Mahakarya Properti - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -874,7 +875,7 @@
     <header class="navbar">
         <div class="container nav-content">
             <a href="{% url 'home' %}" class="brand">
-                <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
+                {% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}
             </a>
 
             <ul class="nav-links">
@@ -1010,7 +1011,7 @@
                         {% endif %}
                         <div class="cat-img-overlay"></div>
                         <div class="top-badges">
-                            {% if prop.badge_status %}<span class="b-red">{{ prop.badge_status }}</span>{% endif %}
+                            {% if prop.status_penjualan == 'sold' %}<span class="b-red">SOLD · TERJUAL</span>{% elif prop.badge_status %}<span class="b-red">{{ prop.badge_status }}</span>{% endif %}
                             {% if prop.badge_kedua %}<span class="b-dark">{{ prop.badge_kedua }}</span>{% endif %}
                         </div>
                         <div class="btn-bookmark">🔖</div>
@@ -1320,7 +1321,7 @@
             <div class="footer-grid">
                 <div>
                     <div class="brand">
-                        <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
+                        {% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}
                     </div>
                     <p class="footer-desc">
                         Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.
@@ -1340,6 +1341,7 @@
                         <a href="{% url 'catalog' %}">Catalog</a>
                         <a href="#footer">Contact</a>
                         <a href="{% url 'home' %}#upcoming">About Us</a>
+                        {% for page in public_pages %}<a href="{{ page.get_absolute_url }}">{{ page.judul }}</a>{% endfor %}
                     </div>
                 </div>
 

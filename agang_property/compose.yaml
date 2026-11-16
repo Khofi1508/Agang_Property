@@ -27,6 +27,10 @@ services:
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
+      MIDTRANS_NOTIFICATION_URL: ${MIDTRANS_NOTIFICATION_URL:-}
+      SITE_BASE_URL: ${SITE_BASE_URL:-}
     volumes:
       - .:/app
     ports:

@@ -1,0 +1,2 @@
+{% load static %}
+<img class="{{ logo_class|default:'site-logo' }}" src="{% if site_settings and site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'e_commerce/images/agang-property-logo.png' %}{% endif %}" alt="{{ site_settings.nama_website|default:'Agang Property' }}">

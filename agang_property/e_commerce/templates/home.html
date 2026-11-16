@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agang Property - Anything You Want, Ready in Here</title>
+    {% include 'partials/site_favicon.html' %}
     <!-- Google Fonts: Playfair Display (Serif) & Plus Jakarta Sans (Sans-Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -905,7 +906,7 @@
     <header class="navbar">
         <div class="container nav-content">
             <a href="{% url 'home' %}" class="brand">
-                <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
+                {% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}
             </a>
 
             <ul class="nav-links">
@@ -1055,7 +1056,9 @@
                         {% if prop.gambar_utama %}
                             <img src="{{ prop.gambar_utama.url }}" alt="{{ prop.nama_properti }}">
                         {% endif %}
-                        {% if prop.badge_status %}
+                        {% if prop.status_penjualan == 'sold' %}
+                            <span class="badge-top-right" style="background:#8f1d2c">SOLD · TERJUAL</span>
+                        {% elif prop.badge_status %}
                             <span class="badge-top-right">{{ prop.badge_status }}</span>
                         {% endif %}
                         <span class="badge-bottom-left">{{ prop.lokasi_detail }}</span>
@@ -1337,7 +1340,7 @@
             <div class="footer-grid">
                 <div>
                     <div class="brand">
-                        <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
+                        {% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}
                     </div>
                     <p class="footer-desc">
                         Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.
@@ -1357,6 +1360,7 @@
                         <a href="{% url 'catalog' %}">Catalog</a>
                         <a href="#footer">Contact</a>
                         <a href="#upcoming">About Us</a>
+                        {% for page in public_pages %}<a href="{{ page.get_absolute_url }}">{{ page.judul }}</a>{% endfor %}
                     </div>
                 </div>
 

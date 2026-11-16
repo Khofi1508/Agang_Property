@@ -1,0 +1,70 @@
+{% extends 'admin_base.html' %}
+
+{% block extra_head %}{% include 'partials/summernote_assets.html' %}{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head">
+            <div><span class="admin-eyebrow">Konten Informasi Website</span><h2>Kelola Halaman</h2><p>Buat konten yang sifatnya tetap dan tampil terpisah dari daftar artikel.</p></div>
+            <span class="status-pill">{{ halaman_terbit }} terbit · {{ total_halaman }} total</span>
+        </div>
+        <div class="admin-grid">
+            <div class="admin-panel admin-form-panel">
+                <h3>Tambah Halaman</h3>
+                <p class="sub">Contoh halaman: Tentang Kami, Kebijakan Privasi, Syarat &amp; Ketentuan, dan Panduan Pembelian. Isi kebijakan sesuai aturan bisnis Agang Property.</p>
+                {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+                <form method="post">
+                    {% csrf_token %}<input type="hidden" name="tambah_halaman" value="1">
+                    <div class="admin-form-grid">
+                        {% for field in form %}
+                            <div class="admin-field {% if field.name == 'isi' or field.name == 'ringkasan' %}wide{% endif %}">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                                {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                                {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Halaman</button><span class="admin-note">Halaman Draft hanya terlihat di panel admin.</span></div>
+                </form>
+            </div>
+            <div class="admin-panel">
+                <div class="admin-section-head"><div><h2>Halaman yang Disarankan</h2><p>Mulai dari informasi yang paling membantu calon pembeli.</p></div></div>
+                <ul class="admin-page-suggestions">
+                    <li><strong>Tentang Kami</strong><span>Profil Agang Property, area layanan, dan cara kerja tim.</span></li>
+                    <li><strong>Panduan Pembelian</strong><span>Alur survei, pemesanan, pembayaran, dan dokumen yang perlu disiapkan.</span></li>
+                    <li><strong>Kebijakan Privasi</strong><span>Data yang dikumpulkan dari formulir dan cara penggunaannya.</span></li>
+                    <li><strong>Syarat &amp; Ketentuan</strong><span>Aturan penggunaan website dan informasi properti.</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><h2>Daftar Halaman</h2><p>Halaman Terbit memiliki alamat publik dan otomatis masuk ke tautan footer serta sitemap.</p></div></div>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Halaman</th><th>Status</th><th>Diperbarui</th><th>Aksi</th></tr></thead><tbody>
+            {% for item in pages %}
+                <tr>
+                    <td><span class="table-primary">{{ item.judul }}</span><span class="table-secondary">/halaman/{{ item.slug }}/</span></td>
+                    <td>{% if item.status == 'published' %}<span class="status-pill live">Terbit</span>{% else %}<span class="status-pill">Draft</span>{% endif %}</td>
+                    <td>{{ item.diperbarui|date:'j M Y' }}</td>
+                    <td><div class="admin-actions">
+                        <a class="admin-button secondary" href="{% url 'admin_page_edit' item.pk %}">Edit</a>
+                        {% if item.status == 'published' %}<a class="admin-button secondary" href="{{ item.get_absolute_url }}" target="_blank" rel="noopener">Lihat</a>{% endif %}
+                        <form class="admin-inline-form" method="post" action="{% url 'admin_page_toggle' item.pk %}">{% csrf_token %}<button class="admin-button secondary" type="submit">{% if item.status == 'published' %}Jadikan Draft{% else %}Terbitkan{% endif %}</button></form>
+                        <form class="admin-inline-form" method="post" action="{% url 'admin_page_delete' item.pk %}" onsubmit="return confirm('Hapus halaman ini?')">{% csrf_token %}<button class="admin-button danger" type="submit">Hapus</button></form>
+                    </div></td>
+                </tr>
+            {% empty %}<tr><td colspan="4" class="admin-empty">Belum ada halaman. Tambahkan halaman pertama melalui formulir di atas.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </div>
+</section>
+<style>
+    .admin-page-suggestions { list-style:none; display:grid; gap:12px; padding:0; }
+    .admin-page-suggestions li { display:grid; gap:3px; padding:13px 15px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); }
+    .admin-page-suggestions strong { color:var(--admin-text); font-size:13px; }
+    .admin-page-suggestions span { color:var(--admin-muted); font-size:12px; line-height:1.6; }
+</style>
+{% endblock %}

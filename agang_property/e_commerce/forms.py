@@ -1,61 +1,58 @@
 from django import forms
 
-from .models import Article, ArticleCategory, HeroSlide
+from .models import Article, ArticleCategory, HeroSlide, WebSetting, WebsitePage
 
 
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
-        fields = (
-            'kategori',
-            'judul',
-            'slug',
-            'ringkasan',
-            'jawaban_ringkas',
-            'poin_utama',
-            'isi',
-            'gambar_utama',
-            'judul_seo',
-            'deskripsi_seo',
-            'kata_kunci',
-            'url_canonical',
-            'status',
-            'unggulan',
-        )
+        fields = ('judul', 'slug', 'ringkasan', 'isi', 'gambar_utama', 'kategori', 'status')
         widgets = {
             'ringkasan': forms.Textarea(attrs={'rows': 3}),
-            'jawaban_ringkas': forms.Textarea(attrs={'rows': 3}),
-            'poin_utama': forms.Textarea(attrs={'rows': 4}),
-            'isi': forms.Textarea(attrs={'rows': 12}),
-            'deskripsi_seo': forms.Textarea(attrs={'rows': 3}),
+            'isi': forms.Textarea(attrs={'rows': 12, 'class': 'admin-input summernote-editor'}),
         }
         labels = {
-            'kategori': 'Kategori artikel',
             'judul': 'Judul artikel',
-            'slug': 'Slug URL (kosongkan untuk dibuat otomatis)',
-            'ringkasan': 'Ringkasan artikel',
-            'jawaban_ringkas': 'Jawaban singkat untuk pembaca',
-            'poin_utama': 'Poin utama (satu per baris)',
+            'slug': 'Slug (kosongkan untuk dibuat otomatis)',
+            'ringkasan': 'Deskripsi artikel',
             'isi': 'Isi artikel',
-            'gambar_utama': 'Gambar utama',
-            'judul_seo': 'Judul SEO',
-            'deskripsi_seo': 'Deskripsi SEO',
-            'kata_kunci': 'Topik terkait (pisahkan dengan koma)',
-            'url_canonical': 'URL canonical (opsional)',
-            'status': 'Status publikasi',
-            'unggulan': 'Tampilkan sebagai artikel unggulan',
+            'gambar_utama': 'Gambar artikel',
+            'kategori': 'Kategori artikel',
+            'status': 'Status artikel',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            if name == 'unggulan':
-                field.widget.attrs['class'] = 'admin-check'
-            else:
-                field.widget.attrs['class'] = 'admin-input'
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'admin-input'
+        self.fields['isi'].widget.attrs['class'] = 'admin-input summernote-editor'
         self.fields['kategori'].required = False
         self.fields['slug'].required = False
         self.fields['gambar_utama'].required = False
+
+
+class WebsitePageForm(forms.ModelForm):
+    class Meta:
+        model = WebsitePage
+        fields = ('judul', 'slug', 'ringkasan', 'isi', 'status')
+        widgets = {
+            'ringkasan': forms.Textarea(attrs={'rows': 3}),
+            'isi': forms.Textarea(attrs={'rows': 12, 'class': 'admin-input summernote-editor'}),
+        }
+        labels = {
+            'judul': 'Nama halaman',
+            'slug': 'Slug (kosongkan untuk dibuat otomatis)',
+            'ringkasan': 'Deskripsi singkat (opsional)',
+            'isi': 'Isi halaman',
+            'status': 'Status halaman',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'admin-input'
+        self.fields['isi'].widget.attrs['class'] = 'admin-input summernote-editor'
+        self.fields['slug'].required = False
 
 
 class ArticleCategoryForm(forms.ModelForm):
@@ -103,3 +100,49 @@ class HeroSlideForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'admin-check' if name == 'aktif' else 'admin-input'
+
+
+class WebSettingForm(forms.ModelForm):
+    class Meta:
+        model = WebSetting
+        fields = (
+            'nama_website',
+            'tagline',
+            'logo',
+            'favicon',
+            'email_kontak',
+            'telepon_kontak',
+            'whatsapp',
+            'alamat',
+            'instagram_url',
+            'facebook_url',
+            'youtube_url',
+            'deskripsi_seo',
+            'teks_footer',
+        )
+        widgets = {
+            'alamat': forms.Textarea(attrs={'rows': 3}),
+            'deskripsi_seo': forms.Textarea(attrs={'rows': 3}),
+        }
+        labels = {
+            'nama_website': 'Nama website',
+            'tagline': 'Tagline',
+            'logo': 'Logo website',
+            'favicon': 'Favicon website',
+            'email_kontak': 'Email kontak',
+            'telepon_kontak': 'Telepon kontak',
+            'whatsapp': 'Nomor WhatsApp',
+            'alamat': 'Alamat kantor',
+            'instagram_url': 'URL Instagram',
+            'facebook_url': 'URL Facebook',
+            'youtube_url': 'URL YouTube',
+            'deskripsi_seo': 'Deskripsi SEO default',
+            'teks_footer': 'Teks hak cipta footer',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'admin-input'
+        self.fields['logo'].help_text = 'Logo ini tampil di brand/header, footer, dan panel admin.'
+        self.fields['favicon'].help_text = 'Ikon tab browser. Unggah PNG persegi atau ICO.'

@@ -4,11 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Registrasi Pelanggan - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#121212] text-white min-h-screen flex items-center justify-center p-4">
     <div class="bg-[#1c1c1c] border border-yellow-600/30 rounded-xl p-8 w-full max-w-lg shadow-2xl">
-        <img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property" class="w-60 max-w-full h-auto mx-auto mb-5">
+        {% include 'partials/site_logo_image.html' with logo_class='w-60 max-w-full h-auto mx-auto mb-5' %}
         <h1 class="text-2xl font-bold text-yellow-500 text-center mb-1">REGISTRASI PELANGGAN</h1>
         <p class="text-gray-400 text-sm text-center mb-6">Buat akun untuk melihat katalog lengkap & jadwal survei</p>
 

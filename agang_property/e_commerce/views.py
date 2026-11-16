@@ -1,30 +1,57 @@
 import json
+import uuid
+import hashlib
+import logging
 import xml.etree.ElementTree as ElementTree
+from datetime import timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.contrib.auth import authenticate, login, logout
+from django.conf import settings
+from django.db import transaction
+from django.db.models import Q
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-from django.utils import timezone
 from django.utils.safestring import mark_safe
-from .forms import ArticleCategoryForm, ArticleForm, HeroSlideForm
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from .forms import ArticleCategoryForm, ArticleForm, HeroSlideForm, WebSettingForm, WebsitePageForm
 from .models import (
     Article,
     ArticleCategory,
     CustomerProfile,
     Category,
     HeroSlide,
+    PaymentOrder,
     Property,
+    PropertyGalleryImage,
+    PaymentNotificationEvent,
     Testimonial,
     UpcomingProject,
     SurveyBooking,
+    WebSetting,
+    WebsitePage,
 )
-from django.db.models import Q
 from django.core.paginator import Paginator
+from .doku import (
+    verify_notification as verify_doku_notification,
+)
+from .midtrans import (
+    MidtransError,
+    create_snap_transaction,
+    fetch_snap_transaction_status,
+    midtrans_is_configured,
+    verify_notification as verify_midtrans_notification,
+)
+
+logger = logging.getLogger(__name__)
 
 # Fungsi pengecekan apakah user adalah Admin (Superuser)
 def is_admin(user):
@@ -79,6 +106,9 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
             # Cek apakah yang login adalah Admin (Superuser) atau Pengguna biasa
             if user.is_superuser:
                 messages.success(request, f'Selamat datang kembali, Admin {user.username}!')
@@ -89,7 +119,7 @@ def login_view(request):
         else:
             messages.error(request, 'Username atau password salah!')
 
-    return render(request, 'login.html')
+    return render(request, 'login.html', {'next': request.GET.get('next', '')})
 
 
 def register_view(request):
@@ -162,10 +192,84 @@ def admin_dashboard_view(request):
 
 
 @user_passes_test(is_admin, login_url='login')
+def admin_users_view(request):
+    users = User.objects.filter(is_superuser=False).select_related('profile').order_by('-date_joined')
+    query = request.GET.get('q', '').strip()
+    account_status = request.GET.get('status', 'all')
+    if query:
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(profile__no_telepon__icontains=query)
+            | Q(profile__alamat__icontains=query)
+        )
+    if account_status == 'active':
+        users = users.filter(is_active=True)
+    elif account_status == 'inactive':
+        users = users.filter(is_active=False)
+    else:
+        account_status = 'all'
+
+    page_obj = Paginator(users, 20).get_page(request.GET.get('page'))
+    all_customers = User.objects.filter(is_superuser=False)
+    return render(request, 'admin_users.html', {
+        'page_title': 'Kelola User',
+        'active_nav': 'users',
+        'page_obj': page_obj,
+        'query': query,
+        'account_status': account_status,
+        'total_users': all_customers.count(),
+        'active_users': all_customers.filter(is_active=True).count(),
+        'inactive_users': all_customers.filter(is_active=False).count(),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_orders_view(request):
+    PaymentOrder.objects.filter(
+        status=PaymentOrder.Status.PENDING,
+        jatuh_tempo__lte=timezone.now(),
+    ).update(status=PaymentOrder.Status.EXPIRED, diperbarui=timezone.now())
+
+    orders = PaymentOrder.objects.select_related('user', 'properti').order_by('-dibuat')
+    query = request.GET.get('q', '').strip()
+    order_status = request.GET.get('status', 'all')
+    if query:
+        orders = orders.filter(
+            Q(invoice_number__icontains=query)
+            | Q(user__username__icontains=query)
+            | Q(user__first_name__icontains=query)
+            | Q(user__last_name__icontains=query)
+            | Q(user__email__icontains=query)
+            | Q(properti__nama_properti__icontains=query)
+            | Q(properti__kode_properti__icontains=query)
+        )
+    if order_status in {PaymentOrder.Status.PENDING, PaymentOrder.Status.PAID, PaymentOrder.Status.EXPIRED, PaymentOrder.Status.FAILED}:
+        orders = orders.filter(status=order_status)
+    else:
+        order_status = 'all'
+
+    all_orders = PaymentOrder.objects.all()
+    page_obj = Paginator(orders, 20).get_page(request.GET.get('page'))
+    return render(request, 'admin_orders.html', {
+        'page_title': 'Kelola Pesanan',
+        'active_nav': 'orders',
+        'page_obj': page_obj,
+        'query': query,
+        'order_status': order_status,
+        'total_orders': all_orders.count(),
+        'pending_orders': all_orders.filter(status=PaymentOrder.Status.PENDING).count(),
+        'paid_orders': all_orders.filter(status=PaymentOrder.Status.PAID).count(),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
 def admin_properties_view(request):
     if request.method == 'POST' and 'tambah_properti' in request.POST:
         kategori_obj = get_object_or_404(Category, id=request.POST.get('kategori'))
-        Property.objects.create(
+        properti_baru = Property.objects.create(
             kategori=kategori_obj,
             nama_properti=request.POST.get('nama_properti'),
             kota=request.POST.get('kota'),
@@ -180,7 +284,10 @@ def admin_properties_view(request):
             ),
             deskripsi_singkat=request.POST.get('deskripsi_singkat'),
             gambar_utama=request.FILES.get('gambar_utama'),
+            youtube_video_url=request.POST.get('youtube_video_url', '').strip(),
         )
+        for index, image in enumerate(request.FILES.getlist('gallery_images'), start=1):
+            PropertyGalleryImage.objects.create(properti=properti_baru, gambar=image, urutan=index)
         messages.success(request, 'Data properti baru berhasil ditambahkan.')
         return redirect('admin_properties')
 
@@ -289,6 +396,27 @@ def admin_hero_slide_delete_view(request, pk):
 
 
 @user_passes_test(is_admin, login_url='login')
+def admin_web_settings_view(request):
+    settings, _ = WebSetting.objects.get_or_create(pk=1)
+    form = WebSettingForm(
+        request.POST if request.method == 'POST' else None,
+        request.FILES if request.method == 'POST' else None,
+        instance=settings,
+    )
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Pengaturan website berhasil diperbarui.')
+        return redirect('admin_web_settings')
+
+    return render(request, 'admin_web_settings.html', {
+        'page_title': 'Pengaturan Website',
+        'active_nav': 'web_settings',
+        'form': form,
+        'web_settings': settings,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
 def admin_edit_profile_view(request):
     # Menggunakan CustomerProfile untuk menyimpan foto & no telepon admin juga
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
@@ -332,9 +460,28 @@ def user_dashboard_view(request):
         return redirect('admin_dashboard')
 
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
+    PaymentOrder.objects.filter(
+        user=request.user,
+        status=PaymentOrder.Status.PENDING,
+        jatuh_tempo__lte=timezone.now(),
+    ).update(status=PaymentOrder.Status.EXPIRED, diperbarui=timezone.now())
 
+    section = request.GET.get('section', 'overview')
+    allowed_sections = {'overview', 'profile', 'password', 'privacy', 'dp', 'order_status', 'site_info'}
+    if section not in allowed_sections:
+        section = 'overview'
+
+    password_form = PasswordChangeForm(user=request.user)
+    if request.method == 'POST' and request.POST.get('action') == 'change_password':
+        section = 'password'
+        password_form = PasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Password berhasil diubah.')
+            return redirect(f'{reverse("user_dashboard")}?section=password')
     # Pengguna bisa mengirim review/testimoni dari dashboard mereka
-    if request.method == 'POST' and 'kirim_ulasan' in request.POST:
+    elif request.method == 'POST' and 'kirim_ulasan' in request.POST:
         Testimonial.objects.create(
             user=request.user,
             nama_pengulas=request.user.first_name or request.user.username,
@@ -344,8 +491,27 @@ def user_dashboard_view(request):
         messages.success(request, 'Terima kasih! Ulasan Anda berhasil dikirim.')
         return redirect('user_dashboard')
 
+    orders = PaymentOrder.objects.filter(user=request.user).select_related('properti').order_by('-dibuat')
+    status_filter = request.GET.get('status', 'all')
+    if status_filter not in {'all', 'pending', 'paid', 'expired', 'failed'}:
+        status_filter = 'all'
+    visible_orders = orders if status_filter == 'all' else orders.filter(status=status_filter)
+    order_counts = {
+        'all': orders.count(),
+        'pending': orders.filter(status=PaymentOrder.Status.PENDING).count(),
+        'paid': orders.filter(status=PaymentOrder.Status.PAID).count(),
+        'expired': orders.filter(status=PaymentOrder.Status.EXPIRED).count(),
+        'failed': orders.filter(status=PaymentOrder.Status.FAILED).count(),
+    }
     context = {
         'profile': profile,
+        'section': section,
+        'status_filter': status_filter,
+        'password_form': password_form,
+        'payment_orders': orders,
+        'visible_orders': visible_orders,
+        'order_counts': order_counts,
+        'site_settings': WebSetting.objects.first(),
         'properties': Property.objects.filter(tampil_di_home=True)[:6],
         'ulasan_saya': Testimonial.objects.filter(user=request.user),
     }
@@ -372,9 +538,9 @@ def user_edit_profile_view(request):
         profile.save()
 
         messages.success(request, 'Profil Anda berhasil diperbarui!')
-        return redirect('user_dashboard')
+        return redirect(f'{reverse("user_dashboard")}?section=profile')
 
-    return render(request, 'user_edit_profile.html', {'profile': profile})
+    return redirect(f'{reverse("user_dashboard")}?section=profile')
 
 # ==========================================
 # 4. Katalog (Publik) 
@@ -447,6 +613,15 @@ def catalog_view(request):
 # 4. Detail Unit Properti (Publik) 
 # ==========================================
 
+def _property_is_sold(properti):
+    return properti.status_penjualan == Property.StatusPenjualan.SOLD
+
+
+def _mark_property_sold(properti_id):
+    Property.objects.filter(pk=properti_id).update(
+        status_penjualan=Property.StatusPenjualan.SOLD,
+    )
+
 def property_detail_view(request, pk):
     # Mengambil data properti berdasarkan pk
     properti = get_object_or_404(Property, pk=pk)
@@ -473,11 +648,360 @@ def property_detail_view(request, pk):
 
     context = {
         'prop': properti,
+        'is_sold': _property_is_sold(properti),
         'list_furnitur': list_furnitur,
         'list_fasilitas': list_fasilitas,
         'properti_serupa': properti_serupa,
+        'gallery_images': properti.foto_galeri.all()[:4],
     }
     return render(request, 'detail_unit.html', context)
+
+
+def property_gallery_view(request, pk):
+    properti = get_object_or_404(Property.objects.prefetch_related('foto_galeri'), pk=pk)
+    youtube_id = _youtube_video_id(properti.youtube_video_url)
+    return render(request, 'property_gallery.html', {
+        'prop': properti,
+        'is_sold': _property_is_sold(properti),
+        'gallery_images': properti.foto_galeri.all(),
+        'youtube_embed_url': f'https://www.youtube-nocookie.com/embed/{youtube_id}' if youtube_id else '',
+    })
+
+
+def _youtube_video_id(url):
+    if not url:
+        return ''
+    from urllib.parse import urlparse, parse_qs
+    parsed = urlparse(url.strip())
+    host = parsed.netloc.lower().split(':')[0]
+    if host in {'youtu.be', 'www.youtu.be'}:
+        video_id = parsed.path.strip('/').split('/')[0]
+    elif host in {'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com'}:
+        if parsed.path == '/watch':
+            video_id = parse_qs(parsed.query).get('v', [''])[0]
+        elif parsed.path.startswith(('/embed/', '/shorts/')):
+            video_id = parsed.path.split('/')[2] if len(parsed.path.split('/')) > 2 else ''
+        else:
+            video_id = ''
+    else:
+        return ''
+    return video_id if video_id and all(ch.isalnum() or ch in '_-' for ch in video_id) else ''
+
+
+@login_required(login_url='login')
+def payment_create_view(request, pk):
+    if request.user.is_superuser:
+        return redirect('admin_dashboard')
+    properti = get_object_or_404(Property, pk=pk)
+    if _property_is_sold(properti):
+        messages.error(request, 'Unit ini sudah terjual dan tidak dapat menerima pembayaran DP baru.')
+        return redirect('property_detail', pk=properti.pk)
+    if request.method == 'POST':
+        if not midtrans_is_configured():
+            messages.error(
+                request,
+                'Midtrans Sandbox belum siap. Isi MIDTRANS_SERVER_KEY, SITE_BASE_URL HTTPS, '
+                'dan MIDTRANS_NOTIFICATION_URL HTTPS pada .env.'
+            )
+            return redirect('payment_create', pk=properti.pk)
+        try:
+            dp_percent = Decimal(request.POST.get('dp_percent', '10'))
+            annual_rate = Decimal(request.POST.get('annual_rate', '4.5'))
+            fixed_years = int(request.POST.get('fixed_years', '1'))
+            tenor_years = int(request.POST.get('tenor_years', '15'))
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, 'Nilai simulasi DP/KPR tidak valid. Silakan periksa kembali.')
+            return redirect('payment_create', pk=properti.pk)
+
+        if not (Decimal('1') <= dp_percent <= Decimal('50')):
+            messages.error(request, 'DP harus berada di antara 1% sampai 50%.')
+            return redirect('payment_create', pk=properti.pk)
+        if not (Decimal('1') <= annual_rate <= Decimal('15')) or not (1 <= fixed_years <= 20) or not (5 <= tenor_years <= 30):
+            messages.error(request, 'Pengaturan simulasi KPR berada di luar rentang yang tersedia.')
+            return redirect('payment_create', pk=properti.pk)
+
+        now = timezone.now()
+        invoice = f"AGDP{now:%y%m%d%H%M%S}{uuid.uuid4().hex[:6].upper()}"
+        with transaction.atomic():
+            properti = Property.objects.select_for_update().get(pk=properti.pk)
+            if _property_is_sold(properti):
+                messages.error(request, 'Unit ini baru saja terjual dan tidak dapat menerima pembayaran DP baru.')
+                return redirect('property_detail', pk=properti.pk)
+            amount = (properti.harga * dp_percent / Decimal('100')).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+            if amount < 1 or amount > Decimal('999999999999'):
+                messages.error(request, 'Jumlah DP tidak dapat diproses Midtrans. Periksa harga properti dan persentase DP.')
+                return redirect('payment_create', pk=properti.pk)
+            payment_order = PaymentOrder.objects.create(
+                invoice_number=invoice,
+                user=request.user,
+                properti=properti,
+                jumlah_dp=amount,
+                persentase_dp=dp_percent,
+                bunga_tetap=annual_rate,
+                masa_bunga_tetap=min(fixed_years, tenor_years),
+                tenor_tahun=tenor_years,
+                metode_pembayaran='Midtrans Snap',
+                payment_gateway='midtrans',
+                jatuh_tempo=now + timedelta(hours=24),
+            )
+        base_url = getattr(settings, 'SITE_BASE_URL', '').rstrip('/')
+        callback_url = f'{base_url}{reverse("payment_status", kwargs={"reference": payment_order.reference})}'
+        try:
+            payment_order.payment_token, payment_order.payment_url = create_snap_transaction(
+                payment_order,
+                callback_url,
+            )
+            payment_order.save(update_fields=['payment_token', 'payment_url', 'diperbarui'])
+        except MidtransError as exc:
+            payment_order.status = PaymentOrder.Status.FAILED
+            payment_order.save(update_fields=['status', 'diperbarui'])
+            messages.error(request, str(exc))
+            return redirect('payment_create', pk=properti.pk)
+        return redirect(payment_order.payment_url)
+
+    return render(request, 'payment_create.html', {
+        'prop': properti,
+        'payment_configured': midtrans_is_configured(),
+        'midtrans_notification_url': settings.MIDTRANS_NOTIFICATION_URL,
+    })
+
+
+def payment_status_view(request, reference):
+    order = get_object_or_404(PaymentOrder.objects.select_related('properti'), reference=reference)
+    if order.status == PaymentOrder.Status.PENDING and order.payment_gateway == 'midtrans':
+        # The return page is also a safe recovery path if Midtrans' webhook
+        # could not be verified or delivered. Trust only the authenticated
+        # Sandbox Status API response after matching invoice and amount.
+        try:
+            status_lookup_id = (
+                request.GET.get('transaction_id')
+                or order.payment_transaction_id
+                or order.invoice_number
+            )
+            status_payload = fetch_snap_transaction_status(status_lookup_id)
+            status_amount = Decimal(str(status_payload.get('gross_amount', '')))
+        except (MidtransError, InvalidOperation, TypeError, ValueError) as exc:
+            logger.warning('Midtrans status check failed for invoice %s: %s', order.invoice_number, exc)
+            status_payload = None
+            status_amount = None
+        if (
+            status_payload
+            and str(status_payload.get('order_id', '')) == order.invoice_number
+            and status_amount == order.jumlah_dp
+            and str(status_payload.get('status_code', '')) == '200'
+        ):
+            transaction_status = str(status_payload.get('transaction_status', '')).lower()
+            fraud_status = str(status_payload.get('fraud_status', '')).lower()
+            if (
+                transaction_status in {'settlement', 'capture'}
+                and (not fraud_status or fraud_status == 'accept')
+            ):
+                with transaction.atomic():
+                    order = PaymentOrder.objects.select_for_update().select_related('properti').get(pk=order.pk)
+                    if order.status == PaymentOrder.Status.PENDING:
+                        order.status = PaymentOrder.Status.PAID
+                        order.dibayar_pada = timezone.now()
+                        order.payment_transaction_id = str(status_payload.get('transaction_id') or '')
+                        order.payment_type = str(status_payload.get('payment_type') or '')
+                        order.payment_channel = order.payment_type
+                        order.payment_payload = status_payload
+                        order.save(update_fields=(
+                            'status', 'dibayar_pada', 'payment_transaction_id',
+                            'payment_type', 'payment_channel', 'payment_payload', 'diperbarui',
+                        ))
+                        _mark_property_sold(order.properti_id)
+    if order.status == PaymentOrder.Status.PENDING and order.jatuh_tempo <= timezone.now():
+        order.status = PaymentOrder.Status.EXPIRED
+        order.save(update_fields=['status', 'diperbarui'])
+    return render(request, 'payment_status.html', {'order': order})
+
+
+@csrf_exempt
+@require_POST
+def doku_notification_view(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return HttpResponseBadRequest('Invalid JSON')
+
+    if not isinstance(payload, dict) or not verify_doku_notification(
+        request.body,
+        request.headers,
+        request.path,
+    ):
+        return HttpResponseForbidden('Signature not valid')
+
+    order_data = payload.get('order') or {}
+    transaction_data = payload.get('transaction') or {}
+    channel_data = payload.get('channel') or {}
+    acquirer_data = payload.get('acquirer') or {}
+    invoice = order_data.get('invoice_number')
+    if not invoice:
+        return HttpResponseBadRequest('Missing order id')
+    try:
+        amount = Decimal(str(order_data.get('amount')))
+    except (InvalidOperation, TypeError, ValueError):
+        return HttpResponseBadRequest('Invalid amount')
+
+    with transaction.atomic():
+        payment_order = PaymentOrder.objects.select_for_update().filter(invoice_number=invoice).first()
+        if payment_order is None:
+            return HttpResponse('Unknown invoice', status=404)
+        if amount != payment_order.jumlah_dp:
+            return HttpResponseBadRequest('Amount mismatch')
+        request_id = request.headers.get('Request-Id', '')
+        event_key = hashlib.sha256(
+            f'{request.headers.get("Client-Id", "")}:{request_id}'.encode('utf-8')
+        ).hexdigest()
+        _, created = PaymentNotificationEvent.objects.get_or_create(
+            event_key=event_key,
+            defaults={'payment': payment_order},
+        )
+        if not created:
+            return HttpResponse('OK')
+
+        transaction_status = str(transaction_data.get('status', '')).upper()
+        if transaction_status == 'SUCCESS':
+            payment_order.status = PaymentOrder.Status.PAID
+            payment_order.dibayar_pada = timezone.now()
+        elif transaction_status == 'FAILED' and payment_order.status != PaymentOrder.Status.PAID:
+            payment_order.status = PaymentOrder.Status.FAILED
+        elif transaction_status == 'EXPIRED' and payment_order.status != PaymentOrder.Status.PAID:
+            payment_order.status = PaymentOrder.Status.EXPIRED
+        elif transaction_status == 'PENDING' and payment_order.status not in (PaymentOrder.Status.PAID, PaymentOrder.Status.EXPIRED, PaymentOrder.Status.FAILED):
+            payment_order.status = PaymentOrder.Status.PENDING
+
+        va_data = payload.get('virtual_account_info') or {}
+        payment_order.payment_transaction_id = str(
+            transaction_data.get('original_request_id') or payment_order.payment_transaction_id
+        )
+        payment_order.payment_type = str(channel_data.get('id') or payment_order.payment_type)
+        payment_order.nomor_virtual_account = str(
+            va_data.get('virtual_account_number') or payment_order.nomor_virtual_account
+        )
+        payment_order.nama_bank = str(acquirer_data.get('id') or payment_order.nama_bank)
+        payment_order.payment_channel = str(channel_data.get('id') or payment_order.payment_channel)
+        payment_order.payment_payload = payload
+        payment_order.save(update_fields=(
+            'status', 'dibayar_pada', 'payment_transaction_id', 'payment_type',
+            'nomor_virtual_account', 'nama_bank', 'payment_channel',
+            'payment_payload', 'diperbarui',
+        ))
+        if payment_order.status == PaymentOrder.Status.PAID:
+            _mark_property_sold(payment_order.properti_id)
+    return HttpResponse('OK')
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def midtrans_notification_view(request):
+    # Allow a simple browser reachability check. It never changes payment state.
+    if request.method == 'GET':
+        return HttpResponse('OK')
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        # Dashboard URL checks may send an empty or non-transaction probe.
+        return HttpResponse('OK')
+
+    if not isinstance(payload, dict) or not verify_midtrans_notification(payload):
+        # Dashboard probes may be unsigned. For a real local invoice, query
+        # Midtrans over authenticated HTTPS instead of trusting an invalid
+        # notification or leaving a paid order pending after a key rotation.
+        test_invoice = str(payload.get('order_id', '')) if isinstance(payload, dict) else ''
+        payment_order = PaymentOrder.objects.filter(
+            invoice_number=test_invoice,
+            payment_gateway='midtrans',
+        ).first() if test_invoice else None
+        if payment_order is None:
+            return HttpResponse('OK')
+        try:
+            # BSI VA / BI SNAP status inquiries require Midtrans' transaction_id.
+            # Other Snap channels can also be queried by transaction_id.
+            status_lookup_id = str(payload.get('transaction_id') or test_invoice)
+            authoritative_payload = fetch_snap_transaction_status(status_lookup_id)
+        except MidtransError as exc:
+            logger.warning('Midtrans notification fallback failed for invoice %s: %s', test_invoice, exc)
+            return HttpResponse('Unable to verify transaction with Midtrans', status=503)
+        try:
+            authoritative_amount = Decimal(str(authoritative_payload.get('gross_amount', '')))
+        except (InvalidOperation, TypeError, ValueError):
+            return HttpResponse('Invalid Midtrans status amount', status=502)
+        if (
+            str(authoritative_payload.get('order_id', '')) != test_invoice
+            or authoritative_amount != payment_order.jumlah_dp
+            or not authoritative_payload.get('transaction_status')
+        ):
+            return HttpResponse('Midtrans status does not match local order', status=502)
+        payload = authoritative_payload
+
+    invoice = str(payload.get('order_id', ''))
+    try:
+        amount = Decimal(str(payload.get('gross_amount', '')))
+    except (InvalidOperation, TypeError, ValueError):
+        return HttpResponseBadRequest('Invalid amount')
+    if not invoice:
+        return HttpResponseBadRequest('Missing order id')
+
+    with transaction.atomic():
+        payment_order = PaymentOrder.objects.select_for_update().filter(
+            invoice_number=invoice,
+            payment_gateway='midtrans',
+        ).first()
+        if payment_order is None:
+            return HttpResponse('Unknown invoice', status=404)
+        if amount != payment_order.jumlah_dp:
+            return HttpResponseBadRequest('Amount mismatch')
+
+        event_key = hashlib.sha256(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
+        _, created = PaymentNotificationEvent.objects.get_or_create(
+            event_key=event_key,
+            defaults={'payment': payment_order},
+        )
+        if not created:
+            return HttpResponse('OK')
+
+        transaction_status = str(payload.get('transaction_status', '')).lower()
+        fraud_status = str(payload.get('fraud_status', '')).lower()
+        status_code = str(payload.get('status_code', ''))
+        success = (
+            status_code == '200'
+            and (transaction_status == 'settlement' or transaction_status == 'capture')
+            and (not fraud_status or fraud_status == 'accept')
+        )
+        if success:
+            payment_order.status = PaymentOrder.Status.PAID
+            payment_order.dibayar_pada = timezone.now()
+        elif transaction_status == 'pending' and payment_order.status not in (
+            PaymentOrder.Status.PAID, PaymentOrder.Status.EXPIRED, PaymentOrder.Status.FAILED,
+        ):
+            payment_order.status = PaymentOrder.Status.PENDING
+        elif transaction_status == 'expire' and payment_order.status != PaymentOrder.Status.PAID:
+            payment_order.status = PaymentOrder.Status.EXPIRED
+        elif transaction_status in {'deny', 'cancel'} and payment_order.status != PaymentOrder.Status.PAID:
+            payment_order.status = PaymentOrder.Status.FAILED
+
+        va_numbers = payload.get('va_numbers') or []
+        va_info = va_numbers[0] if isinstance(va_numbers, list) and va_numbers and isinstance(va_numbers[0], dict) else {}
+        payment_order.payment_transaction_id = str(payload.get('transaction_id') or payment_order.payment_transaction_id)
+        payment_order.payment_type = str(payload.get('payment_type') or payment_order.payment_type)
+        payment_order.payment_channel = payment_order.payment_type
+        payment_order.nomor_virtual_account = str(
+            va_info.get('va_number')
+            or payload.get('permata_va_number')
+            or payment_order.nomor_virtual_account
+        )
+        payment_order.nama_bank = str(va_info.get('bank') or payload.get('bank') or payment_order.nama_bank)
+        payment_order.payment_payload = payload
+        payment_order.save(update_fields=(
+            'status', 'dibayar_pada', 'payment_transaction_id', 'payment_type',
+            'payment_channel', 'nomor_virtual_account', 'nama_bank',
+            'payment_payload', 'diperbarui',
+        ))
+        if payment_order.status == PaymentOrder.Status.PAID:
+            _mark_property_sold(payment_order.properti_id)
+    return HttpResponse('OK')
 
 
 @user_passes_test(is_admin, login_url='login')
@@ -508,11 +1032,68 @@ def admin_article_delete_view(request, pk):
     return redirect('admin_articles')
 
 
+@user_passes_test(is_admin, login_url='login')
+def admin_pages_view(request):
+    form = WebsitePageForm()
+    if request.method == 'POST' and 'tambah_halaman' in request.POST:
+        form = WebsitePageForm(request.POST)
+        if form.is_valid():
+            page = form.save(commit=False)
+            page.penulis = request.user
+            page.save()
+            messages.success(request, 'Halaman berhasil dibuat.')
+            return redirect('admin_pages')
+
+    return render(request, 'admin_pages.html', {
+        'page_title': 'Kelola Halaman',
+        'active_nav': 'pages',
+        'form': form,
+        'pages': WebsitePage.objects.select_related('penulis').all(),
+        'total_halaman': WebsitePage.objects.count(),
+        'halaman_terbit': WebsitePage.objects.filter(status=WebsitePage.Status.PUBLISHED).count(),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_page_edit_view(request, pk):
+    page = get_object_or_404(WebsitePage, pk=pk)
+    form = WebsitePageForm(request.POST or None, instance=page)
+    if request.method == 'POST' and form.is_valid():
+        saved_page = form.save(commit=False)
+        if not saved_page.penulis_id:
+            saved_page.penulis = request.user
+        saved_page.save()
+        messages.success(request, 'Halaman berhasil diperbarui.')
+        return redirect('admin_pages')
+    return render(request, 'admin_page_form.html', {
+        'page_title': 'Edit Halaman',
+        'active_nav': 'pages',
+        'page': page,
+        'form': form,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_page_toggle_view(request, pk):
+    page = get_object_or_404(WebsitePage, pk=pk)
+    page.status = WebsitePage.Status.DRAFT if page.status == WebsitePage.Status.PUBLISHED else WebsitePage.Status.PUBLISHED
+    page.save(update_fields=['status', 'diperbarui'])
+    messages.success(request, 'Status halaman berhasil diperbarui.')
+    return redirect('admin_pages')
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_page_delete_view(request, pk):
+    page = get_object_or_404(WebsitePage, pk=pk)
+    page.delete()
+    messages.success(request, 'Halaman berhasil dihapus.')
+    return redirect('admin_pages')
+
+
 def article_list_view(request):
-    articles = Article.objects.filter(
-        status=Article.Status.PUBLISHED,
-        tanggal_terbit__lte=timezone.now(),
-    ).select_related('kategori', 'penulis')
+    articles = Article.objects.filter(status=Article.Status.PUBLISHED).select_related('kategori', 'penulis')
     category_slug = request.GET.get('kategori')
     search_query = request.GET.get('q', '').strip()
     if category_slug:
@@ -537,23 +1118,18 @@ def article_detail_view(request, slug):
         Article.objects.select_related('kategori', 'penulis'),
         slug=slug,
         status=Article.Status.PUBLISHED,
-        tanggal_terbit__lte=timezone.now(),
     )
-    related_articles = Article.objects.filter(
-        status=Article.Status.PUBLISHED,
-        tanggal_terbit__lte=timezone.now(),
-    ).exclude(pk=article.pk).select_related('kategori', 'penulis')[:3]
+    related_articles = Article.objects.filter(status=Article.Status.PUBLISHED).exclude(pk=article.pk).select_related('kategori', 'penulis')[:3]
     if article.kategori_id:
         category_articles = Article.objects.filter(
             kategori=article.kategori,
             status=Article.Status.PUBLISHED,
-            tanggal_terbit__lte=timezone.now(),
         ).exclude(pk=article.pk).select_related('kategori', 'penulis')[:3]
         if category_articles:
             related_articles = category_articles
 
-    description = article.deskripsi_seo or article.ringkasan
-    canonical_url = article.url_canonical or request.build_absolute_uri(article.get_absolute_url())
+    description = article.ringkasan
+    canonical_url = request.build_absolute_uri(article.get_absolute_url())
     image_url = request.build_absolute_uri(article.gambar_utama.url) if article.gambar_utama else None
     author_name = 'Tim Agang Property'
     if article.penulis:
@@ -563,9 +1139,9 @@ def article_detail_view(request, slug):
         '@context': 'https://schema.org',
         '@type': 'BlogPosting',
         'mainEntityOfPage': {'@type': 'WebPage', '@id': canonical_url},
-        'headline': article.judul_seo or article.judul,
+        'headline': article.judul,
         'description': description,
-        'datePublished': (article.tanggal_terbit or article.dibuat).isoformat(),
+        'datePublished': article.dibuat.isoformat(),
         'dateModified': article.diperbarui.isoformat(),
         'author': {'@type': 'Person' if article.penulis else 'Organization', 'name': author_name},
         'publisher': {'@type': 'Organization', 'name': 'Agang Property'},
@@ -574,8 +1150,6 @@ def article_detail_view(request, slug):
         structured_data['image'] = [image_url]
     if article.kategori:
         structured_data['articleSection'] = article.kategori.nama_kategori
-    if article.kata_kunci:
-        structured_data['keywords'] = [word.strip() for word in article.kata_kunci.split(',') if word.strip()]
     json_ld = json.dumps(structured_data, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
 
     context = {
@@ -584,10 +1158,17 @@ def article_detail_view(request, slug):
         'canonical_url': canonical_url,
         'meta_description': description,
         'article_author': author_name,
-        'key_points': [line.strip() for line in article.poin_utama.splitlines() if line.strip()],
         'json_ld': mark_safe(json_ld),
     }
     return render(request, 'article_detail.html', context)
+
+
+def website_page_detail_view(request, slug):
+    page = get_object_or_404(WebsitePage, slug=slug, status=WebsitePage.Status.PUBLISHED)
+    return render(request, 'website_page.html', {
+        'page': page,
+        'canonical_url': request.build_absolute_uri(page.get_absolute_url()),
+    })
 
 
 def sitemap_view(request):
@@ -596,14 +1177,15 @@ def sitemap_view(request):
     for route_name in ('home', 'catalog', 'article_list'):
         item = ElementTree.SubElement(urlset, 'url')
         ElementTree.SubElement(item, 'loc').text = request.build_absolute_uri(reverse(route_name))
-    articles = Article.objects.filter(
-        status=Article.Status.PUBLISHED,
-        tanggal_terbit__lte=timezone.now(),
-    )
+    articles = Article.objects.filter(status=Article.Status.PUBLISHED)
     for article in articles:
         item = ElementTree.SubElement(urlset, 'url')
         ElementTree.SubElement(item, 'loc').text = request.build_absolute_uri(article.get_absolute_url())
-        ElementTree.SubElement(item, 'lastmod').text = (article.diperbarui or article.tanggal_terbit).date().isoformat()
+        ElementTree.SubElement(item, 'lastmod').text = article.diperbarui.date().isoformat()
+    for page in WebsitePage.objects.filter(status=WebsitePage.Status.PUBLISHED):
+        item = ElementTree.SubElement(urlset, 'url')
+        ElementTree.SubElement(item, 'loc').text = request.build_absolute_uri(page.get_absolute_url())
+        ElementTree.SubElement(item, 'lastmod').text = page.diperbarui.date().isoformat()
     xml = ElementTree.tostring(urlset, encoding='utf-8', xml_declaration=True)
     return HttpResponse(xml, content_type='application/xml; charset=utf-8')
 

@@ -1,0 +1,30 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+<style>
+    .note-editor.note-frame { border:1px solid #49443e!important; border-radius:7px; overflow:hidden; color:#222; }
+    .note-editor .note-toolbar { border-bottom:1px solid #49443e!important; background:#222428!important; }
+    .note-editor .note-btn { border-color:#49443e!important; color:#f8fafc!important; background:#1a1b1e!important; }
+    .note-editor .note-btn:hover,.note-editor .note-btn.active { background:#3a3530!important; }
+    .note-editor .note-editable { min-height:280px; color:#171717; background:#fff; }
+    .note-editor .note-statusbar { background:#222428!important; border-top:1px solid #49443e!important; }
+</style>
+<script>
+    jQuery(function ($) {
+        $('.summernote-editor').each(function () {
+            $(this).summernote({
+                height: 320,
+                minHeight: 240,
+                placeholder: 'Tulis isi dengan paragraf, subjudul, daftar, atau tautan…',
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'table']],
+                    ['view', ['fullscreen', 'help']]
+                ]
+            });
+        });
+    });
+</script>

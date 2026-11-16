@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ prop.nama_properti }} - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -87,6 +88,7 @@
 
         .top-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .badge-red { background: var(--burgundy); color: #fff; font-size: 10px; font-weight: 700; padding: 5px 12px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .badge-sold { background: #8f1d2c; color: #fff; font-size: 10px; font-weight: 800; padding: 5px 12px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
         .badge-dark { background: var(--bg-card-inner); border: 1px solid var(--border-dark); color: #cbd5e1; font-size: 10px; font-weight: 700; padding: 5px 12px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
 
         .header-main-row {
@@ -120,8 +122,10 @@
         }
         .btn-survey { background: var(--burgundy); color: #fff; font-size: 11px; font-weight: 700; padding: 10px 18px; border-radius: 6px; text-transform: uppercase; }
         .btn-survey:hover { background: var(--burgundy-hover); }
-        .btn-wa { background: var(--gold-bright); color: #111; font-size: 11px; font-weight: 700; padding: 10px 18px; border-radius: 6px; text-transform: uppercase; }
-        .btn-wa:hover { background: var(--gold); }
+        .btn-dp { background: var(--gold-bright); color: #111; font-size: 11px; font-weight: 700; padding: 10px 18px; border-radius: 6px; text-transform: uppercase; }
+        .btn-dp:hover { background: var(--gold); }
+        .sold-notice { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:11px 14px; border:1px solid rgba(248,113,113,.35); border-radius:7px; background:rgba(127,29,29,.22); color:#fecaca; font-size:11px; font-weight:700; }
+        .sold-notice a { color:var(--gold); text-decoration:underline; }
 
         /* Gallery Grid (1 Besar Kiri, 4 Kecil Kanan) */
         .gallery-grid {
@@ -131,7 +135,7 @@
             margin-bottom: 40px;
             height: 480px;
         }
-        .main-img-box { border-radius: 12px; overflow: hidden; border: 1px solid var(--border-dark); height: 100%; position: relative; }
+        .main-img-box { border-radius: 12px; overflow: hidden; border: 1px solid var(--border-dark); height: 100%; position: relative; display: block; }
         .main-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .sub-img-grid {
             display: grid;
@@ -140,7 +144,7 @@
             gap: 16px;
             height: 100%;
         }
-        .sub-img-box { border-radius: 10px; overflow: hidden; border: 1px solid var(--border-dark); position: relative; height: 100%; }
+        .sub-img-box { border-radius: 10px; overflow: hidden; border: 1px solid var(--border-dark); position: relative; height: 100%; display: block; }
         .sub-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .img-tag-label {
             position: absolute;
@@ -395,7 +399,7 @@
     <header class="navbar">
         <div class="container nav-content">
             <a href="{% url 'home' %}" class="brand">
-                <img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property">
+                {% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}
             </a>
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}">HOME</a></li>
@@ -419,7 +423,7 @@
             </div>
 
             <div class="top-badges">
-                <span class="badge-red">{{ prop.badge_status }}</span>
+                {% if is_sold %}<span class="badge-sold">SOLD · TERJUAL</span>{% else %}<span class="badge-red">{{ prop.badge_status }}</span>{% endif %}
                 {% if prop.badge_kedua %}<span class="badge-dark">{{ prop.badge_kedua }}</span>{% endif %}
                 {% if prop.badge_ketiga %}<span class="badge-dark">{{ prop.badge_ketiga }}</span>{% endif %}
             </div>
@@ -443,8 +447,10 @@
                     </div>
                     <div class="price-cicilan-sub">{{ prop.estimasi_cicilan }}</div>
                     <div class="action-buttons-row">
-                        <a href="#booking-section" class="btn-survey">📅 JADWALKAN SURVEY</a>
-                        <a href="https://wa.me/628118900234?text=Halo%20Agang%20Property,%20saya%20tertarik%20dengan%20unit%20{{ prop.nama_properti }}" target="_blank" class="btn-wa">💬 TANYA UNIT VIA WA</a>
+                        {% if is_sold %}<div class="sold-notice">Properti ini sudah berstatus SOLD dan tidak menerima DP baru. <a href="{% url 'catalog' %}">Lihat unit lainnya →</a></div>{% else %}
+                            <a href="#booking-section" class="btn-survey">📅 JADWALKAN SURVEY</a>
+                            <a href="{% url 'payment_create' prop.pk %}" class="btn-dp">💳 DOWN PAYMENT (DP)</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -452,29 +458,32 @@
 
         <!-- GALLERY PHOTO GRID -->
         <div class="gallery-grid" id="property-gallery">
-            <div class="main-img-box">
+            <a class="main-img-box" href="{% url 'property_gallery' prop.pk %}" aria-label="Buka galeri {{ prop.nama_properti }}">
                 {% if prop.gambar_utama %}
                     <img src="{{ prop.gambar_utama.url }}" alt="{{ prop.nama_properti }}">
                 {% endif %}
                 <span class="img-tag-label">TAMPAK FASAD UTAMA</span>
-            </div>
+            </a>
             <div class="sub-img-grid">
-                <div class="sub-img-box">
-                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" alt="Ruang Tamu">
-                    <span class="img-tag-label">Ruang Tamu Terbuka</span>
-                </div>
-                <div class="sub-img-box">
-                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80" alt="Kitchen Set">
-                    <span class="img-tag-label">Kitchen Set Terpasang</span>
-                </div>
-                <div class="sub-img-box">
-                    <img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=600&q=80" alt="Kamar Tidur">
-                    <span class="img-tag-label">Kamar Tidur Utama</span>
-                </div>
-                <div class="sub-img-box">
-                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80" alt="Kamar Mandi">
-                    <span class="img-tag-label">Sanitasi TOTO Premium</span>
-                </div>
+                {% for foto in gallery_images %}
+                    <a class="sub-img-box" href="{% url 'property_gallery' prop.pk %}" aria-label="Buka galeri {{ prop.nama_properti }}">
+                        <img src="{{ foto.gambar.url }}" alt="{{ foto.keterangan|default:prop.nama_properti }}">
+                        <span class="img-tag-label">{{ foto.keterangan|default:'Foto properti' }}</span>
+                    </a>
+                {% empty %}
+                    {% if prop.gambar_utama %}
+                        <a class="sub-img-box" href="{% url 'property_gallery' prop.pk %}" aria-label="Buka galeri {{ prop.nama_properti }}">
+                            <img src="{{ prop.gambar_utama.url }}" alt="{{ prop.nama_properti }}">
+                            <span class="img-tag-label">Lihat galeri lengkap</span>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if prop.youtube_video_url %}
+                    <a class="sub-img-box" href="{% url 'property_gallery' prop.pk %}" aria-label="Buka video {{ prop.nama_properti }}">
+                        {% if prop.gambar_utama %}<img src="{{ prop.gambar_utama.url }}" alt="Video {{ prop.nama_properti }}">{% endif %}
+                        <span class="img-tag-label">▶ Tonton video properti</span>
+                    </a>
+                {% endif %}
             </div>
         </div>
 
@@ -681,7 +690,7 @@
                         <a class="related-card" href="{% url 'property_detail' rekomendasi.pk %}">
                             <div class="related-image">
                                 {% if rekomendasi.gambar_utama %}<img src="{{ rekomendasi.gambar_utama.url }}" alt="{{ rekomendasi.nama_properti }}">{% endif %}
-                                <span class="badge-dark">{{ rekomendasi.badge_status }}</span>
+                                {% if rekomendasi.status_penjualan == 'sold' %}<span class="badge-sold">SOLD</span>{% else %}<span class="badge-dark">{{ rekomendasi.badge_status }}</span>{% endif %}
                             </div>
                             <div class="related-content">
                                 <span class="related-price">Rp {{ rekomendasi.harga_format_titik }}</span>
@@ -700,7 +709,7 @@
         <div class="container">
             <div class="footer-grid">
                 <div>
-                    <a href="{% url 'home' %}" class="brand"><img class="brand-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property"></a>
+                    <a href="{% url 'home' %}" class="brand">{% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}</a>
                     <p class="footer-description">Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.</p>
                 </div>
                 <div><h3 class="footer-title">EKSPLORASI PROPERTI</h3><div class="footer-links"><a href="{% url 'home' %}">Home</a><a href="#property-gallery">Gallery</a><a href="{% url 'catalog' %}">Catalog</a><a href="{% url 'home' %}#upcoming">About Us</a></div></div>

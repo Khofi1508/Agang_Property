@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.judul }} | Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
+    {% if page.ringkasan %}<meta name="description" content="{{ page.ringkasan }}">{% endif %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme:dark; --bg:#111215; --panel:#1b1c20; --gold:#facc15; --text:#f8fafc; --muted:#a3aab5; --line:rgba(255,255,255,.08); }
+        * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:15px/1.75 'Plus Jakarta Sans',sans-serif; }
+        a { color:inherit; text-decoration:none; } .wrap { width:min(1120px,calc(100% - 40px)); margin:auto; }
+        header { position:sticky; top:0; z-index:5; background:rgba(17,18,21,.94); border-bottom:1px solid var(--line); backdrop-filter:blur(12px); }
+        .nav { min-height:78px; display:flex; align-items:center; justify-content:space-between; gap:20px; } .brand img { display:block; width:185px; max-height:62px; object-fit:contain; }
+        nav { display:flex; flex-wrap:wrap; gap:22px; color:#c9cbd0; font-size:11px; font-weight:700; letter-spacing:.08em; } nav a:hover, footer a:hover { color:var(--gold); }
+        main { min-height:65vh; padding:40px 0 80px; } .breadcrumbs { margin-bottom:22px; color:var(--muted); font-size:11px; } .content { max-width:850px; margin:auto; }
+        .eyebrow { color:var(--gold); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+        h1,h2 { font-family:'Playfair Display',Georgia,serif; } h1 { margin:10px 0 14px; font-size:clamp(34px,5vw,56px); line-height:1.14; }
+        .summary { margin:0 0 30px; color:#cbd5e1; font-size:17px; } .body { color:#e5e7eb; font-size:15px; line-height:1.9; overflow-wrap:anywhere; } .body p { margin:0 0 22px; }
+        footer { padding:24px 0; border-top:1px solid var(--line); color:var(--muted); font-size:11px; } .footer-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px; }
+        .footer-logo { display:block; width:145px; max-height:52px; object-fit:contain; } .page-links { display:flex; flex-wrap:wrap; gap:14px; }
+        @media(max-width:650px) { .wrap { width:calc(100% - 28px); } .nav { align-items:flex-start; flex-direction:column; padding:12px 0; } nav { gap:12px; font-size:9px; } main { padding-top:25px; } .summary { font-size:15px; } }
+    </style>
+</head>
+<body>
+<header><div class="wrap nav">
+    <a href="{% url 'home' %}" class="brand">{% include 'partials/site_logo_image.html' with logo_class='article-site-logo' %}</a>
+    <nav aria-label="Navigasi halaman"><a href="{% url 'home' %}">HOME</a><a href="{% url 'catalog' %}">KATALOG</a><a href="{% url 'article_list' %}">ARTIKEL</a>{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul|upper }}</a>{% endfor %}</nav>
+</div></header>
+<main class="wrap">
+    <div class="breadcrumbs"><a href="{% url 'home' %}">Beranda</a> &nbsp;›&nbsp; {{ page.judul }}</div>
+    <article class="content">
+        <span class="eyebrow">Agang Property</span>
+        <h1>{{ page.judul }}</h1>
+        {% if page.ringkasan %}<p class="summary">{{ page.ringkasan }}</p>{% endif %}
+        <div class="body">{{ page.isi|safe }}</div>
+    </article>
+</main>
+<footer><div class="wrap footer-row">
+    {% include 'partials/site_logo_image.html' with logo_class='footer-logo' %}
+    <nav class="page-links" aria-label="Halaman informasi">{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul }}</a>{% endfor %}<a href="{% url 'article_list' %}">Artikel</a><a href="{% url 'sitemap' %}">Sitemap</a></nav>
+    <span>© 2026 Agang Property</span>
+</div></footer>
+</body>
+</html>

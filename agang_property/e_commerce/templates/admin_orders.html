@@ -1,0 +1,55 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head">
+            <div><span class="admin-eyebrow">Reservasi Properti</span><h2>Kelola Pesanan</h2><p>Pantau invoice DP, pembayaran, pelanggan, dan unit yang dipesan.</p></div>
+        </div>
+        <div class="admin-metrics">
+            <div class="admin-metric"><span>Total Pesanan</span><strong>{{ total_orders }}</strong></div>
+            <div class="admin-metric"><span>Menunggu Pembayaran</span><strong>{{ pending_orders }}</strong></div>
+            <div class="admin-metric"><span>Pembayaran Lunas</span><strong>{{ paid_orders }}</strong></div>
+            <div class="admin-metric"><span>Hasil Saat Ini</span><strong>{{ page_obj.paginator.count }}</strong></div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-panel">
+        <form method="get" class="admin-search-form">
+            <div class="admin-field"><label for="order-search">Cari pesanan</label><input class="admin-input" id="order-search" name="q" value="{{ query }}" placeholder="Invoice, pelanggan, nama atau kode properti"></div>
+            <div class="admin-field"><label for="order-status">Status pembayaran</label><select class="admin-input" id="order-status" name="status"><option value="all" {% if order_status == 'all' %}selected{% endif %}>Semua status</option><option value="pending" {% if order_status == 'pending' %}selected{% endif %}>Menunggu pembayaran</option><option value="paid" {% if order_status == 'paid' %}selected{% endif %}>Lunas</option><option value="expired" {% if order_status == 'expired' %}selected{% endif %}>Kedaluwarsa</option><option value="failed" {% if order_status == 'failed' %}selected{% endif %}>Gagal</option></select></div>
+            <button class="admin-button gold" type="submit">Cari Pesanan</button>
+        </form>
+        <div class="admin-table-wrap">
+            <table class="admin-table" style="min-width:980px">
+                <thead><tr><th>Invoice</th><th>Pelanggan</th><th>Properti</th><th>Jumlah DP</th><th>Gateway</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                <tbody>
+                    {% for order in page_obj %}
+                    <tr>
+                        <td><span class="table-primary">{{ order.invoice_number }}</span><span class="table-secondary">{{ order.metode_pembayaran }}</span></td>
+                        <td><span class="table-primary">{{ order.user.get_full_name|default:order.user.username }}</span><span class="table-secondary">{{ order.user.email|default:'-' }}</span></td>
+                        <td><span class="table-primary">{{ order.properti.nama_properti }}</span><span class="table-secondary">{{ order.properti.kode_properti }}</span></td>
+                        <td>Rp {{ order.jumlah_dp_format }}</td>
+                        <td>{{ order.get_payment_gateway_display }}</td>
+                        <td><span class="status-pill {% if order.status == 'paid' %}live{% endif %}">{{ order.get_status_display }}</span></td>
+                        <td>{{ order.dibuat|date:'d M Y, H:i' }}</td>
+                        <td><a class="admin-button secondary" href="/admin/e_commerce/paymentorder/{{ order.pk }}/change/">Detail</a></td>
+                    </tr>
+                    {% empty %}<tr><td colspan="8" class="admin-empty">Belum ada pesanan yang cocok.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav class="admin-form-actions" aria-label="Halaman pesanan" style="margin-top:16px">
+            <span class="admin-note">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+            <div class="admin-actions">
+                {% if page_obj.has_previous %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ order_status }}&page={{ page_obj.previous_page_number }}">← Sebelumnya</a>{% endif %}
+                {% if page_obj.has_next %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ order_status }}&page={{ page_obj.next_page_number }}">Berikutnya →</a>{% endif %}
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,25 +1,27 @@
 {% extends 'admin_base.html' %}
 
+{% block extra_head %}{% include 'partials/summernote_assets.html' %}{% endblock %}
+
 {% block content %}
 <section class="admin-section">
     <div class="admin-panel">
-        <div class="admin-section-head"><div><span class="admin-eyebrow">Konten & Pencarian</span><h2>Kelola Artikel</h2><p>Tulis artikel, atur metadata, dan tentukan kapan artikel tampil di website.</p></div><span class="status-pill">{{ total_artikel_terbit }} terbit · {{ total_artikel }} total</span></div>
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Konten Website</span><h2>Kelola Artikel</h2><p>Isi judul, deskripsi, konten, gambar, kategori, dan status publikasi.</p></div><span class="status-pill">{{ total_artikel_terbit }} terbit · {{ total_artikel }} total</span></div>
         <div class="admin-grid">
             <div class="admin-panel admin-form-panel">
-                <h3>Tulis Artikel Baru</h3><p class="sub">Utamakan informasi yang berguna dan spesifik. Slug akan dibuat otomatis bila dibiarkan kosong.</p>
+                <h3>Tulis Artikel Baru</h3><p class="sub">Slug akan dibuat otomatis dari judul jika dibiarkan kosong. Artikel berstatus draft belum terlihat oleh pengunjung.</p>
                 {% if article_form.non_field_errors %}<div class="admin-error">{{ article_form.non_field_errors }}</div>{% endif %}
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}<input type="hidden" name="tambah_artikel" value="1">
                     <div class="admin-form-grid">
                         {% for field in article_form %}
-                            <div class="admin-field {% if field.name == 'isi' or field.name == 'poin_utama' or field.name == 'jawaban_ringkas' or field.name == 'ringkasan' or field.name == 'deskripsi_seo' %}wide{% endif %}">
-                                {% if field.name == 'unggulan' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+                            <div class="admin-field {% if field.name == 'isi' or field.name == 'ringkasan' %}wide{% endif %}">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
                                 {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
                                 {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
                             </div>
                         {% endfor %}
                     </div>
-                    <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Artikel</button><span class="admin-note">Artikel berstatus draft tidak tampil untuk pengunjung dan tidak masuk sitemap publik.</span></div>
+                    <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Artikel</button><span class="admin-note">Pilih Terbit agar artikel tampil di halaman publik.</span></div>
                 </form>
             </div>
             <div class="admin-panel admin-form-panel" id="article-categories">
@@ -37,7 +39,7 @@
 
 <section class="admin-section">
     <div class="admin-panel">
-        <div class="admin-section-head"><div><h2>Daftar Artikel</h2><p>Kelola draft dan artikel yang sudah diterbitkan.</p></div><a class="admin-button secondary" href="{% url 'article_list' %}" target="_blank">Lihat Halaman Publik</a></div>
+        <div class="admin-section-head"><div><h2>Daftar Artikel</h2><p>Perbarui artikel, lihat versi publik, atau hapus konten.</p></div><a class="admin-button secondary" href="{% url 'article_list' %}" target="_blank">Lihat Halaman Publik</a></div>
         <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Judul Artikel</th><th>Kategori</th><th>Status</th><th>Diperbarui</th><th>Aksi</th></tr></thead><tbody>
             {% for article in articles %}<tr>
                 <td><span class="table-primary">{{ article.judul }}</span><span class="table-secondary">/artikel/{{ article.slug }}/</span></td>

@@ -1,0 +1,38 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head">
+            <div>
+                <span class="admin-eyebrow">Konfigurasi Website</span>
+                <h2>Pengaturan Website</h2>
+                <p>Logo dipakai sebagai identitas header/brand dan footer. Favicon adalah ikon kecil di tab browser.</p>
+            </div>
+            <a class="admin-button secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Lihat Website</a>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:20px;margin-bottom:22px">
+            {% if web_settings.logo %}<div class="admin-field"><label>Logo saat ini · header, footer, dan dashboard</label><img src="{{ web_settings.logo.url }}" alt="Logo {{ web_settings.nama_website }}" style="display:block;max-width:220px;max-height:100px;object-fit:contain;background:#fff;border-radius:6px;padding:10px"></div>{% endif %}
+            {% if web_settings.favicon %}<div class="admin-field"><label>Favicon saat ini · tab browser</label><img src="{{ web_settings.favicon.url }}" alt="Favicon {{ web_settings.nama_website }}" style="display:block;width:48px;height:48px;object-fit:contain;background:#fff;border-radius:6px;padding:5px"></div>{% endif %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="admin-field{% if field.name == 'alamat' or field.name == 'deskripsi_seo' %} wide{% endif %}" style="margin-bottom:15px">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<span class="admin-help">{{ field.help_text }}</span>{% endif %}
+                {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="admin-form-actions">
+                <span class="admin-note">Pengaturan ini disimpan sebagai konfigurasi website tunggal.</span>
+                <button class="admin-button gold" type="submit">Simpan Pengaturan</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

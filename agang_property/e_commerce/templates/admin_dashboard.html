@@ -47,7 +47,7 @@
 
 <section class="admin-section">
     <div class="admin-panel">
-        <div class="admin-section-head"><div><h2>Pelanggan Terdaftar</h2><p>Data pelanggan terbaru yang membuat akun.</p></div></div>
+        <div class="admin-section-head"><div><h2>Pelanggan Terdaftar</h2><p>Data pelanggan terbaru yang membuat akun.</p></div><a class="admin-button" href="{% url 'admin_users' %}">Kelola User</a></div>
         <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Nama / Username</th><th>Email</th><th>No. Telepon</th><th>Alamat</th></tr></thead><tbody>
             {% for cust in customers %}<tr><td><span class="table-primary">{{ cust.user.first_name|default:cust.user.username }}</span></td><td>{{ cust.user.email|default:'-' }}</td><td>{{ cust.no_telepon|default:'-' }}</td><td>{{ cust.alamat|default:'-' }}</td></tr>{% empty %}<tr><td colspan="4" class="admin-empty">Belum ada pelanggan terdaftar.</td></tr>{% endfor %}
         </tbody></table></div>

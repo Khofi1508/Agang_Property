@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Edit Profil Pelanggan - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#121212] text-white min-h-screen flex items-center justify-center p-6">
     <div class="bg-[#1c1c1c] border border-yellow-600/30 rounded-xl p-8 w-full max-w-lg">
         <div class="flex justify-between items-center mb-5">
-            <a href="{% url 'home' %}"><img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property" class="w-40 max-w-full h-auto"></a>
+            <a href="{% url 'home' %}">{% include 'partials/site_logo_image.html' with logo_class='w-40 max-w-full h-auto' %}</a>
             <a href="{% url 'user_dashboard' %}" class="text-sm text-gray-400 hover:text-white">← Kembali ke Dashboard</a>
         </div>
         <h1 class="text-xl font-bold text-yellow-500 mb-5">EDIT PROFIL SAYA</h1>

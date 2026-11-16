@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,8 +27,29 @@ SECRET_KEY = 'django-insecure-0k0v$zdb9knkbtaesp*&1japhh7oybou(j_zrso($oj(g7lezj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+_public_site_url = os.environ.get('SITE_BASE_URL', '').strip()
+_doku_notification_url = os.environ.get('DOKU_NOTIFICATION_URL', '').strip()
+_midtrans_notification_url = os.environ.get('MIDTRANS_NOTIFICATION_URL', '').strip()
+DOKU_CLIENT_ID = os.environ.get('DOKU_CLIENT_ID', '').strip()
+DOKU_SHARED_KEY = os.environ.get('DOKU_SHARED_KEY', '').strip()
+DOKU_NOTIFICATION_URL = _doku_notification_url.rstrip('/') + '/' if _doku_notification_url else ''
+MIDTRANS_SERVER_KEY = os.environ.get('MIDTRANS_SERVER_KEY', '').strip()
+MIDTRANS_NOTIFICATION_URL = _midtrans_notification_url.rstrip('/') + '/' if _midtrans_notification_url else ''
 
+_public_site_parts = urlparse(_public_site_url)
+_notification_parts = urlparse(DOKU_NOTIFICATION_URL)
+_midtrans_notification_parts = urlparse(MIDTRANS_NOTIFICATION_URL)
+_public_hosts = [
+    part.hostname
+    for part in (_public_site_parts, _notification_parts, _midtrans_notification_parts)
+    if part.hostname
+]
+ALLOWED_HOSTS = list(dict.fromkeys(['localhost', '127.0.0.1', *_public_hosts]))
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
+    f'{part.scheme}://{part.netloc}'
+    for part in (_public_site_parts, _notification_parts, _midtrans_notification_parts)
+    if part.scheme in {'http', 'https'} and part.netloc
+))
 
 # Application definition
 
@@ -62,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'e_commerce.context_processors.public_pages',
             ],
         },
     },
@@ -137,3 +161,5 @@ MAILERS = {
 # Konfigurasi untuk menyimpan dan menampilkan file upload (Gambar Properti & Profil)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+SITE_BASE_URL = os.environ.get('SITE_BASE_URL', '').rstrip('/')

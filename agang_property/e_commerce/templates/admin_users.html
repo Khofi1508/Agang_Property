@@ -1,0 +1,54 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head">
+            <div><span class="admin-eyebrow">Pelanggan</span><h2>Kelola User</h2><p>Temukan akun pelanggan dan lihat informasi kontak yang tersimpan.</p></div>
+        </div>
+        <div class="admin-metrics">
+            <div class="admin-metric"><span>Total User</span><strong>{{ total_users }}</strong></div>
+            <div class="admin-metric"><span>Akun Aktif</span><strong>{{ active_users }}</strong></div>
+            <div class="admin-metric"><span>Akun Nonaktif</span><strong>{{ inactive_users }}</strong></div>
+            <div class="admin-metric"><span>Hasil Saat Ini</span><strong>{{ page_obj.paginator.count }}</strong></div>
+        </div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-panel">
+        <form method="get" class="admin-search-form">
+            <div class="admin-field"><label for="user-search">Cari user</label><input class="admin-input" id="user-search" name="q" value="{{ query }}" placeholder="Nama, username, email, telepon, alamat"></div>
+            <div class="admin-field"><label for="user-status">Status akun</label><select class="admin-input" id="user-status" name="status"><option value="all" {% if account_status == 'all' %}selected{% endif %}>Semua akun</option><option value="active" {% if account_status == 'active' %}selected{% endif %}>Aktif</option><option value="inactive" {% if account_status == 'inactive' %}selected{% endif %}>Nonaktif</option></select></div>
+            <button class="admin-button gold" type="submit">Cari User</button>
+        </form>
+        <div class="admin-table-wrap">
+            <table class="admin-table" style="min-width:900px">
+                <thead><tr><th>Nama / Username</th><th>Email</th><th>Telepon</th><th>Alamat</th><th>Bergabung</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                    {% for account in page_obj %}
+                    <tr>
+                        <td><span class="table-primary">{{ account.get_full_name|default:account.username }}</span><span class="table-secondary">@{{ account.username }}</span></td>
+                        <td>{{ account.email|default:'-' }}</td>
+                        <td>{{ account.profile.no_telepon|default:'-' }}</td>
+                        <td>{{ account.profile.alamat|default:'-'|truncatechars:48 }}</td>
+                        <td>{{ account.date_joined|date:'d M Y' }}</td>
+                        <td><span class="status-pill {% if account.is_active %}live{% endif %}">{% if account.is_active %}Aktif{% else %}Nonaktif{% endif %}</span></td>
+                        <td><a class="admin-button secondary" href="/admin/auth/user/{{ account.pk }}/change/">Kelola akun</a></td>
+                    </tr>
+                    {% empty %}<tr><td colspan="7" class="admin-empty">Tidak ada user yang cocok dengan pencarian ini.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav class="admin-form-actions" aria-label="Halaman user" style="margin-top:16px">
+            <span class="admin-note">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+            <div class="admin-actions">
+                {% if page_obj.has_previous %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ account_status }}&page={{ page_obj.previous_page_number }}">← Sebelumnya</a>{% endif %}
+                {% if page_obj.has_next %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ account_status }}&page={{ page_obj.next_page_number }}">Berikutnya →</a>{% endif %}
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

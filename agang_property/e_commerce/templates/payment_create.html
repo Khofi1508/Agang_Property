@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Down Payment {{ prop.nama_properti }} - Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#111215;--card:#191a1e;--inner:#222329;--gold:#facc15;--wine:#752c32;--text:#f8fafc;--muted:#a1a1aa;--line:#303137;--blue:#2563eb}
+        *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px 'Plus Jakarta Sans',sans-serif;line-height:1.6}a{color:inherit;text-decoration:none}.wrap{width:min(1180px,calc(100% - 36px));margin:auto}
+        .nav{padding:14px 0;border-bottom:1px solid var(--line);background:#141518}.navin{display:flex;justify-content:space-between;align-items:center}.logo{width:166px;max-height:54px;object-fit:contain}.nav a:last-child{font-size:12px;color:var(--gold);font-weight:700}
+        main{padding:34px 0 70px}.eyebrow{font-size:10px;color:var(--gold);letter-spacing:1.1px;text-transform:uppercase;font-weight:700}.page-title{font:600 clamp(29px,4vw,42px) 'Playfair Display',serif;margin:4px 0 18px}.messages{margin:0 0 16px}.message{padding:12px 15px;border-radius:8px;background:#392326;color:#fecaca;border:1px solid #71353b;margin-bottom:8px}
+        .property-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden}.property-card{display:grid;grid-template-columns:300px 1fr;margin-bottom:24px}.property-card img{width:100%;height:100%;min-height:210px;object-fit:cover}.property-copy{padding:23px}.property-copy h2{font:600 25px 'Playfair Display',serif;margin:4px 0}.location{font-size:12px;color:var(--muted)}.description{color:#d4d4d8;max-width:780px}.price{color:var(--gold);font:700 24px 'Playfair Display',serif;margin-top:10px}
+        .layout{display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:start}.panel{padding:22px}.panel h2{font:600 24px 'Playfair Display',serif;margin:0 0 3px}.sub{color:var(--muted);font-size:12px;margin:0 0 18px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.control-card,.summary-card{border:1px solid var(--line);border-radius:10px;background:#151619}.control-card{padding:17px}.summary-card{padding:17px;margin-bottom:13px}.control-title{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}.control-title strong{color:var(--gold)}input[type=range]{width:100%;margin:13px 0 2px;accent-color:var(--gold)}.limits{display:flex;justify-content:space-between;color:var(--muted);font-size:10px}.divider{border-top:1px dashed #3a3b40;margin:16px 0}.number{font:700 19px 'Playfair Display',serif}.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed #35363a;font-size:12px}.row:last-child{border:0}.row span{color:#c4c4ca}.row b{text-align:right}.row.total b,.row.total span{color:var(--gold)}.selectline{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}.selectline select{background:#25262a;border:1px solid #414249;border-radius:6px;color:white;padding:8px;font:inherit}.info{margin-top:13px;border-radius:8px;padding:11px 12px;background:#202b3b;color:#c4d6f5;font-size:11px}.payment-choice{display:flex;gap:12px;align-items:flex-start;border:1px solid #494036;border-radius:9px;background:#211d18;padding:14px;margin:15px 0}.payment-choice input{margin-top:5px;accent-color:var(--gold)}.payment-choice strong{display:block;color:#f5d65c}.payment-choice small{display:block;color:#c1b9a9;margin-top:3px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.button{display:block;border:0;border-radius:7px;padding:13px 16px;text-align:center;font:700 12px 'Plus Jakarta Sans',sans-serif;cursor:pointer}.button.survey{background:var(--wine);color:#fff}.button.pay{background:var(--gold);color:#171717}.button:disabled{opacity:.5;cursor:not-allowed}.setup{padding:14px;border-radius:8px;background:#342f1e;border:1px solid #725d1b;color:#f5dfa0;font-size:12px;margin:12px 0}.small{font-size:10px;color:var(--muted);margin-top:12px}
+        @media(max-width:850px){.layout{grid-template-columns:1fr}.property-card{grid-template-columns:240px 1fr}}
+        @media(max-width:600px){.wrap{width:min(100% - 24px,1180px)}.property-card{grid-template-columns:1fr}.property-card img{height:220px;min-height:0}.columns{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.panel{padding:16px}.navin .logo{width:135px}}
+    </style>
+</head>
+<body>
+    <header class="nav"><div class="wrap navin"><a href="{% url 'home' %}">{% include 'partials/site_logo_image.html' with logo_class='logo' %}</a><a href="{% url 'property_detail' prop.pk %}">← Kembali ke detail unit</a></div></header>
+    <main class="wrap">
+        <span class="eyebrow">Reservasi Unit · Midtrans Snap Sandbox</span><h1 class="page-title">Down Payment Properti</h1>
+        {% if messages %}<div class="messages">{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}</div>{% endif %}
+        <section class="property-card">
+            {% if prop.gambar_utama %}<img src="{{ prop.gambar_utama.url }}" alt="{{ prop.nama_properti }}">{% endif %}
+            <div class="property-copy"><span class="eyebrow">{{ prop.kode_properti }} · {{ prop.badge_status }}</span><h2>{{ prop.nama_properti }}</h2><div class="location">{{ prop.lokasi_detail }}, {{ prop.kota }}</div><p class="description">{{ prop.deskripsi_singkat }}</p><div class="price">Harga Rp {{ prop.harga_format_titik }}</div></div>
+        </section>
+
+        <div class="layout">
+            <section class="panel" id="kpr-calculator" data-property-price="{{ prop.harga }}">
+                <span class="eyebrow">Perencanaan Pembiayaan</span><h2>Simulasi KPR</h2><p class="sub">Perkiraan angsuran; nilai final mengikuti penilaian dan ketentuan bank.</p>
+                <div class="columns">
+                    <div>
+                        <div class="control-card">
+                            <div class="control-title"><span>Harga properti</span><strong class="number">Rp {{ prop.harga_format_titik }}</strong></div>
+                            <div class="divider"></div>
+                            <div class="control-title"><span>Down Payment</span><strong><span id="dp-percent">10</span>% · Rp <span id="dp-amount">0</span></strong></div>
+                            <input id="dp-range" type="range" min="1" max="50" step="1" value="10" aria-label="Persentase DP">
+                            <div class="limits"><span>1%</span><span>50%</span></div>
+                            <div class="divider"></div>
+                            <div class="control-title"><span>Suku bunga fix per tahun</span><strong><span id="rate-value">4.50</span>%</strong></div>
+                            <input id="rate-range" type="range" min="1" max="15" step="0.5" value="4.5" aria-label="Suku bunga tetap">
+                            <div class="limits"><span>1%</span><span>15%</span></div>
+                            <div class="divider"></div>
+                            <div class="selectline"><label for="fixed-years">Masa kredit fix</label><select id="fixed-years"><option value="1" selected>1 tahun</option><option value="2">2 tahun</option><option value="3">3 tahun</option><option value="5">5 tahun</option><option value="10">10 tahun</option><option value="15">15 tahun</option><option value="20">20 tahun</option></select></div>
+                            <div class="small">Bunga floating setelah masa fix disimulasikan sebesar 12% per tahun.</div>
+                            <div class="divider"></div>
+                            <div class="control-title"><label for="tenor-range">Jangka waktu KPR</label><strong><span id="tenor-value">15</span> tahun</strong></div>
+                            <input id="tenor-range" type="range" min="5" max="30" step="1" value="15" aria-label="Tenor KPR">
+                            <div class="limits"><span>5 tahun</span><span>30 tahun</span></div>
+                            <button id="simulate-button" class="button pay" type="button" style="width:100%;margin-top:15px">Simulasikan</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="summary-card">
+                            <span class="eyebrow">Rincian pembayaran KPR</span>
+                            <div class="row total"><span>Angsuran masa fix</span><b id="fixed-payment">Rp 0 / bulan</b></div>
+                            <div class="row"><span>Angsuran setelah fix (estimasi 12%)</span><b id="floating-payment">Rp 0 / bulan</b></div>
+                            <div class="row"><span>Pokok pinjaman</span><b id="loan-amount">Rp 0</b></div>
+                            <div class="row"><span>Estimasi total bunga KPR</span><b id="interest-total">Rp 0</b></div>
+                        </div>
+                        <div class="summary-card">
+                            <span class="eyebrow">Perkiraan bayar di awal</span>
+                            <div class="row total"><span>Down Payment</span><b id="initial-dp">Rp 0</b></div>
+                            <div class="row"><span>Angsuran pertama</span><b id="first-installment">Rp 0</b></div>
+                            <div class="row"><span>Biaya legalitas / administrasi</span><b>Belum termasuk</b></div>
+                            <div class="row total"><span>Estimasi dana awal</span><b id="initial-total">Rp 0</b></div>
+                        </div>
+                        <div class="info">Kalkulator ini hanya simulasi. DP yang ditagihkan di bawah adalah persentase dari harga properti. Biaya notaris, pajak, dan biaya bank dikonfirmasi terpisah.</div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <span class="eyebrow">Metode pembayaran</span><h2>Pilih cara bayar</h2><p class="sub">Pembayaran diproses lewat halaman checkout resmi Midtrans.</p>
+                <form method="post" id="payment-form">
+                    {% csrf_token %}<input type="hidden" id="form-dp-percent" name="dp_percent" value="10"><input type="hidden" id="form-annual-rate" name="annual_rate" value="4.5"><input type="hidden" id="form-fixed-years" name="fixed_years" value="1"><input type="hidden" id="form-tenor-years" name="tenor_years" value="15">
+                    <div class="payment-choice"><input type="radio" checked aria-label="Midtrans Snap Sandbox"><div><strong>Midtrans Sandbox</strong><small>Pilih Virtual Account, QRIS, e-wallet, kartu, atau kanal lain yang aktif di Snap.</small></div></div>
+                    <div class="info">Daftarkan URL ini sebagai Payment Notification URL di Midtrans Dashboard → Settings → Configuration: <b>{{ midtrans_notification_url|default:'Isi MIDTRANS_NOTIFICATION_URL pada .env' }}</b>. Tunnel ngrok harus aktif agar Midtrans dapat mengirim notifikasi.</div>
+                    <div class="summary-card"><div class="row"><span>Properti</span><b>{{ prop.nama_properti }}</b></div><div class="row"><span>DP <span id="checkout-dp-label">10</span>%</span><b>Rp <span id="checkout-dp-amount">0</span></b></div><div class="row total"><span>Total dibayar</span><b>Rp <span id="checkout-total">0</span></b></div></div>
+                    {% if not payment_configured %}<div class="setup">Checkout belum dapat digunakan. Isi <b>MIDTRANS_SERVER_KEY</b>, <b>SITE_BASE_URL</b> HTTPS, dan <b>MIDTRANS_NOTIFICATION_URL</b> HTTPS pada .env. Simpan Server Key Sandbox dengan rahasia.</div>{% endif %}
+                    <div class="actions"><a class="button survey" href="{% url 'property_detail' prop.pk %}#booking-section">Jadwalkan survei dulu</a><button class="button pay" type="submit" {% if not payment_configured %}disabled{% endif %}>Bayar dengan Midtrans</button></div>
+                    <p class="small">Dengan melanjutkan, pesanan DP dibuat dan batas pembayaran diatur 24 jam. Status lunas diperbarui setelah notifikasi resmi Midtrans diterima.</p>
+                </form>
+            </aside>
+        </div>
+    </main>
+    <script>
+    (() => {
+        const box = document.getElementById('kpr-calculator');
+        const price = Number(box.dataset.propertyPrice);
+        const dp = document.getElementById('dp-range');
+        const rate = document.getElementById('rate-range');
+        const fixed = document.getElementById('fixed-years');
+        const tenor = document.getElementById('tenor-range');
+        const rupiah = new Intl.NumberFormat('id-ID', {maximumFractionDigits: 0});
+        const money = value => `Rp ${rupiah.format(Math.max(0, Math.round(value)))}`;
+        function installment(balance, annualRate, months) {
+            if (months <= 0) return 0;
+            const monthlyRate = annualRate / 1200;
+            if (!monthlyRate) return balance / months;
+            return balance * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
+        }
+        function balanceAfter(balance, monthly, annualRate, months) {
+            const monthlyRate = annualRate / 1200;
+            if (!monthlyRate) return Math.max(0, balance - monthly * months);
+            return Math.max(0, balance * Math.pow(1 + monthlyRate, months) - monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate));
+        }
+        function update() {
+            const percent = Number(dp.value), annual = Number(rate.value), tenure = Number(tenor.value);
+            const fixedYears = Math.min(Number(fixed.value), tenure);
+            fixed.value = fixedYears;
+            const dpAmount = price * percent / 100;
+            const principal = price - dpAmount;
+            const firstPayment = installment(principal, annual, tenure * 12);
+            const afterFixed = balanceAfter(principal, firstPayment, annual, fixedYears * 12);
+            const floatingPayment = installment(afterFixed, 12, Math.max(1, (tenure - fixedYears) * 12));
+            const estimatedInterest = Math.max(0, firstPayment * fixedYears * 12 + floatingPayment * Math.max(0, tenure - fixedYears) * 12 - principal);
+            document.getElementById('dp-percent').textContent = percent;
+            document.getElementById('dp-amount').textContent = rupiah.format(dpAmount);
+            document.getElementById('rate-value').textContent = annual.toFixed(2);
+            document.getElementById('tenor-value').textContent = tenure;
+            document.getElementById('fixed-payment').textContent = `${money(firstPayment)} / bulan`;
+            document.getElementById('floating-payment').textContent = `${money(floatingPayment)} / bulan`;
+            document.getElementById('loan-amount').textContent = money(principal);
+            document.getElementById('interest-total').textContent = money(estimatedInterest);
+            document.getElementById('initial-dp').textContent = money(dpAmount);
+            document.getElementById('first-installment').textContent = money(firstPayment);
+            document.getElementById('initial-total').textContent = money(dpAmount + firstPayment);
+            document.getElementById('checkout-dp-label').textContent = percent;
+            document.getElementById('checkout-dp-amount').textContent = rupiah.format(dpAmount);
+            document.getElementById('checkout-total').textContent = rupiah.format(dpAmount);
+            document.getElementById('form-dp-percent').value = percent;
+            document.getElementById('form-annual-rate').value = annual;
+            document.getElementById('form-fixed-years').value = fixedYears;
+            document.getElementById('form-tenor-years').value = tenure;
+        }
+        [dp, rate, fixed, tenor].forEach(control => control.addEventListener('input', update));
+        document.getElementById('simulate-button').addEventListener('click', update);
+        document.getElementById('payment-form').addEventListener('submit', () => { update(); });
+        update();
+    })();
+    </script>
+</body>
+</html>

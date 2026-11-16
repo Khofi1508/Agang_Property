@@ -1,15 +1,17 @@
 {% extends 'admin_base.html' %}
 
+{% block extra_head %}{% include 'partials/summernote_assets.html' %}{% endblock %}
+
 {% block content %}
 <section class="admin-section">
     <div class="admin-panel admin-form-panel">
-        <div class="admin-section-head"><div><span class="admin-eyebrow">Artikel & Metadata</span><h2>Edit Artikel</h2><p>Perbarui isi, metadata pencarian, dan status publikasi.</p></div><a class="admin-button secondary" href="{% url 'admin_articles' %}">Kembali ke Daftar Artikel</a></div>
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Konten Website</span><h2>Edit Artikel</h2><p>Perbarui judul, deskripsi, isi, gambar, kategori, atau status publikasi.</p></div><a class="admin-button secondary" href="{% url 'admin_articles' %}">Kembali ke Daftar Artikel</a></div>
         {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}<div class="admin-form-grid">
                 {% for field in form %}
-                    <div class="admin-field {% if field.name == 'isi' or field.name == 'poin_utama' or field.name == 'jawaban_ringkas' or field.name == 'ringkasan' or field.name == 'deskripsi_seo' %}wide{% endif %}">
-                        {% if field.name == 'unggulan' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+                    <div class="admin-field {% if field.name == 'isi' or field.name == 'ringkasan' %}wide{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
                         {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
                         {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
                     </div>

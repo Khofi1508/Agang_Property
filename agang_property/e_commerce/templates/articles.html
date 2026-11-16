@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Artikel Properti & Panduan Hunian | Agang Property</title>
+    {% include 'partials/site_favicon.html' %}
     <meta name="description" content="Baca panduan properti, tips memilih hunian, pembiayaan, dan informasi kawasan dari Agang Property Makassar.">
     <link rel="canonical" href="{{ canonical_url }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +39,7 @@
 </head>
 <body>
 <header><div class="wrap nav">
-    <a href="{% url 'home' %}" class="brand"><img src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property"></a>
+    <a href="{% url 'home' %}" class="brand">{% include 'partials/site_logo_image.html' with logo_class='article-site-logo' %}</a>
     <nav><a href="{% url 'home' %}">HOME</a><a href="{% url 'catalog' %}">KATALOG</a><a href="{% url 'article_list' %}" class="active">ARTIKEL</a></nav>
 </div></header>
 <main class="wrap">
@@ -60,7 +61,7 @@
                 <a href="{{ article.get_absolute_url }}" aria-label="Baca {{ article.judul }}">
                     <div class="cover">{% if article.gambar_utama %}<img src="{{ article.gambar_utama.url }}" alt="{{ article.judul }}" loading="lazy">{% endif %}</div>
                     <div class="card-body">
-                        <div class="meta">{{ article.kategori.nama_kategori|default:'Panduan Properti' }} · {{ article.tanggal_terbit|date:'j F Y' }}</div>
+                        <div class="meta">{{ article.kategori.nama_kategori|default:'Panduan Properti' }} · {{ article.dibuat|date:'j F Y' }}</div>
                         <h2>{{ article.judul }}</h2>
                         <p>{{ article.ringkasan }}</p>
                         <span class="read">BACA ARTIKEL →</span>
@@ -79,6 +80,6 @@
         </nav>
     {% endif %}
 </main>
-<footer><div class="wrap footer-row"><img class="footer-logo" src="{% static 'e_commerce/images/agang-property-logo.png' %}" alt="Agang Property"><span>© 2026 Agang Property · <a href="{% url 'sitemap' %}">Sitemap</a></span></div></footer>
+<footer><div class="wrap footer-row">{% include 'partials/site_logo_image.html' with logo_class='footer-logo' %}<span>{% for page in public_pages %}<a href="{{ page.get_absolute_url }}">{{ page.judul }}</a> · {% endfor %}© 2026 Agang Property · <a href="{% url 'sitemap' %}">Sitemap</a></span></div></footer>
 </body>
 </html>

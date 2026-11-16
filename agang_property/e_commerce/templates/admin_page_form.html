@@ -1,0 +1,24 @@
+{% extends 'admin_base.html' %}
+
+{% block extra_head %}{% include 'partials/summernote_assets.html' %}{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel admin-form-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Konten Informasi Website</span><h2>Edit Halaman</h2><p>Perbarui informasi yang ingin ditampilkan pada halaman ini.</p></div><a class="admin-button secondary" href="{% url 'admin_pages' %}">Kembali ke Daftar Halaman</a></div>
+        {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+        <form method="post">
+            {% csrf_token %}<div class="admin-form-grid">
+                {% for field in form %}
+                    <div class="admin-field {% if field.name == 'isi' or field.name == 'ringkasan' %}wide{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                        {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                        {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Perubahan</button>{% if page.status == 'published' %}<a class="admin-button secondary" href="{{ page.get_absolute_url }}" target="_blank" rel="noopener">Lihat Halaman Publik</a>{% endif %}</div>
+        </form>
+    </div>
+</section>
+{% endblock %}

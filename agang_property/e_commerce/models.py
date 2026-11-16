@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.text import slugify
+import uuid
 
 # 1. MODEL PROFIL CUSTOMER (Login, Registrasi, Profil & Edit Profil)
 class CustomerProfile(models.Model):
@@ -36,6 +36,10 @@ class Category(models.Model):
 
 # 3. MODEL KATALOG PROPERTI (Mendukung Halaman Home & Halaman Katalog)
 class Property(models.Model):
+    class StatusPenjualan(models.TextChoices):
+        AVAILABLE = 'available', 'Tersedia'
+        SOLD = 'sold', 'Sold'
+
     STATUS_UNIT_CHOICES = [
         ('Siap Huni', 'Siap Huni (Ready Stock)'),
         ('SHM Ready', 'SHM Ready Makassar'),
@@ -61,11 +65,22 @@ class Property(models.Model):
     badge_kedua = models.CharField(max_length=50, blank=True, null=True, default="SHM & IMB LENGKAP")
     badge_ketiga = models.CharField(max_length=50, blank=True, null=True, default="HADAP UTARA")
     status_legalitas = models.CharField(max_length=50, choices=STATUS_UNIT_CHOICES, default='Siap Huni')
+    status_penjualan = models.CharField(
+        max_length=12,
+        choices=StatusPenjualan.choices,
+        default=StatusPenjualan.AVAILABLE,
+        db_index=True,
+        verbose_name='Status penjualan',
+    )
     
     # Foto & Deskripsi
     gambar_utama = models.ImageField(upload_to='properti/')
     deskripsi_singkat = models.TextField()
     deskripsi_panjang = models.TextField(blank=True, null=True, help_text="Paragraf penjelasan di bawah galeri foto")
+    youtube_video_url = models.URLField(
+        blank=True,
+        help_text="Tautan video YouTube untuk galeri properti, contoh https://youtu.be/abc123",
+    )
     
     # Spesifikasi Utama (6 Kotak Atas)
     jumlah_lantai = models.PositiveSmallIntegerField(default=1)
@@ -113,6 +128,86 @@ class Property(models.Model):
         if self.harga_coret:
             return f"{int(self.harga_coret):,}".replace(",", ".")
         return ""
+
+
+class PropertyGalleryImage(models.Model):
+    properti = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='foto_galeri')
+    gambar = models.ImageField(upload_to='properti/galeri/')
+    keterangan = models.CharField(max_length=150, blank=True)
+    urutan = models.PositiveSmallIntegerField(default=1)
+    diunggah = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['urutan', 'id']
+        verbose_name = 'Foto Galeri Properti'
+        verbose_name_plural = 'Foto Galeri Properti'
+
+    def __str__(self):
+        return f'{self.properti.nama_properti} - foto {self.urutan}'
+
+
+class PaymentOrder(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Menunggu Pembayaran'
+        PAID = 'paid', 'Lunas'
+        EXPIRED = 'expired', 'Kedaluwarsa'
+        FAILED = 'failed', 'Gagal'
+
+    PAYMENT_GATEWAY_CHOICES = [
+        ('midtrans', 'Midtrans Sandbox'),
+        ('doku', 'DOKU Checkout Sandbox'),
+        ('doku_legacy', 'DOKU (transaksi lama)'),
+    ]
+
+    reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    invoice_number = models.CharField(max_length=30, unique=True)
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='property_payments')
+    properti = models.ForeignKey(Property, on_delete=models.PROTECT, related_name='payment_orders')
+    jumlah_dp = models.DecimalField(max_digits=15, decimal_places=0)
+    persentase_dp = models.DecimalField(max_digits=5, decimal_places=2)
+    bunga_tetap = models.DecimalField(max_digits=5, decimal_places=2, default=4.50)
+    masa_bunga_tetap = models.PositiveSmallIntegerField(default=1)
+    tenor_tahun = models.PositiveSmallIntegerField(default=15)
+    metode_pembayaran = models.CharField(max_length=50, default='Midtrans Snap')
+    payment_gateway = models.CharField(max_length=20, choices=PAYMENT_GATEWAY_CHOICES, default='midtrans')
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    payment_url = models.URLField(max_length=1000, blank=True)
+    payment_token = models.CharField(max_length=120, blank=True)
+    payment_transaction_id = models.CharField(max_length=100, blank=True)
+    payment_type = models.CharField(max_length=50, blank=True)
+    nomor_virtual_account = models.CharField(max_length=80, blank=True)
+    nama_bank = models.CharField(max_length=80, blank=True)
+    payment_channel = models.CharField(max_length=80, blank=True)
+    payment_payload = models.JSONField(default=dict, blank=True)
+    jatuh_tempo = models.DateTimeField()
+    dibayar_pada = models.DateTimeField(blank=True, null=True)
+    dibuat = models.DateTimeField(auto_now_add=True)
+    diperbarui = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-dibuat']
+        verbose_name = 'Pembayaran Down Payment'
+        verbose_name_plural = 'Pembayaran Down Payment'
+
+    def __str__(self):
+        return f'{self.invoice_number} - {self.get_status_display()}'
+
+    @property
+    def jumlah_dp_format(self):
+        return f'{int(self.jumlah_dp):,}'.replace(',', '.')
+
+
+class PaymentNotificationEvent(models.Model):
+    event_key = models.CharField(max_length=128, unique=True)
+    payment = models.ForeignKey(PaymentOrder, on_delete=models.CASCADE, related_name='notifications')
+    diterima = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Notifikasi Pembayaran Gateway'
+        verbose_name_plural = 'Notifikasi Pembayaran Gateway'
+
+    def __str__(self):
+        return f'{self.event_key} - {self.payment.invoice_number}'
 
 
 # 4. MODEL TESTIMONI ("Kata Mereka")
@@ -185,25 +280,6 @@ class UpcomingProject(models.Model):
         return f"{self.nama_proyek} ({posisi})"
 
 
-class HeroSlide(models.Model):
-    tagline = models.CharField(max_length=100, default='MASTERPIECE COLLECTION')
-    judul = models.CharField(max_length=140)
-    judul_aksen = models.CharField(max_length=140)
-    deskripsi = models.TextField(max_length=500)
-    gambar = models.ImageField(upload_to='hero_slides/')
-    label_tombol = models.CharField(max_length=50, default='JELAJAHI PROPERTI')
-    urutan = models.PositiveSmallIntegerField(default=1)
-    aktif = models.BooleanField(default=True)
-    dibuat = models.DateTimeField(auto_now_add=True)
-    diperbarui = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['urutan', '-dibuat']
-        verbose_name = 'Hero Slide'
-        verbose_name_plural = 'Hero Slides'
-
-    def __str__(self):
-        return f'{self.urutan}. {self.judul} {self.judul_aksen}'
 
 # 6. MODEL JADWAL SURVEI LOKASI (Diakses dari Halaman Detail Unit)
 class SurveyBooking(models.Model):
@@ -286,29 +362,15 @@ class Article(models.Model):
     )
     judul = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
-    ringkasan = models.CharField(max_length=320)
-    jawaban_ringkas = models.TextField(
-        blank=True,
-        help_text='Jawaban langsung 1–3 kalimat untuk menjawab pertanyaan utama pembaca.',
-    )
-    poin_utama = models.TextField(
-        blank=True,
-        help_text='Satu poin per baris; tampil sebagai ringkasan yang mudah dipindai.',
-    )
-    isi = models.TextField(help_text='Tulis artikel dengan paragraf dan subjudul yang jelas.')
+    ringkasan = models.TextField(help_text='Deskripsi singkat artikel.')
+    isi = models.TextField(help_text='Isi lengkap artikel.')
     gambar_utama = models.ImageField(upload_to='artikel/', blank=True, null=True)
-    judul_seo = models.CharField(max_length=70, blank=True)
-    deskripsi_seo = models.CharField(max_length=320, blank=True)
-    kata_kunci = models.CharField(max_length=200, blank=True, help_text='Pisahkan topik terkait dengan koma.')
-    url_canonical = models.URLField(blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
-    unggulan = models.BooleanField(default=False)
-    tanggal_terbit = models.DateTimeField(blank=True, null=True)
     dibuat = models.DateTimeField(auto_now_add=True)
     diperbarui = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-tanggal_terbit', '-dibuat']
+        ordering = ['-dibuat']
         verbose_name = 'Artikel'
         verbose_name_plural = 'Artikel'
 
@@ -321,8 +383,6 @@ class Article(models.Model):
                 slug = f'{base_slug}-{suffix}'
                 suffix += 1
             self.slug = slug
-        if self.status == self.Status.PUBLISHED and not self.tanggal_terbit:
-            self.tanggal_terbit = timezone.now()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -331,4 +391,112 @@ class Article(models.Model):
     def __str__(self):
         return self.judul
 
+# 10 Halaman
+class WebsitePage(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Draft'
+        PUBLISHED = 'published', 'Terbit'
 
+    judul = models.CharField(max_length=160)
+    slug = models.SlugField(max_length=180, unique=True, blank=True)
+    ringkasan = models.CharField(max_length=320, blank=True)
+    isi = models.TextField(help_text='Tulis isi halaman dengan paragraf yang jelas.')
+    penulis = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='halaman_agang',
+    )
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
+    dibuat = models.DateTimeField(auto_now_add=True)
+    diperbarui = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['judul']
+        verbose_name = 'Halaman Website'
+        verbose_name_plural = 'Halaman Website'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.judul) or 'halaman'
+            slug = base_slug
+            suffix = 2
+            while WebsitePage.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f'{base_slug}-{suffix}'
+                suffix += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('website_page_detail', kwargs={'slug': self.slug})
+
+    def __str__(self):
+        return self.judul
+
+#8 Web Setting
+class WebSetting(models.Model):
+    """Pengaturan umum website. Hanya satu record yang digunakan."""
+    nama_website = models.CharField(max_length=120, default='Agang Property')
+    tagline = models.CharField(max_length=200, blank=True)
+    logo = models.ImageField(
+        upload_to='website/',
+        blank=True,
+        null=True,
+        help_text='Logo ini digunakan pada brand/header, footer, dan area admin website.',
+    )
+    favicon = models.ImageField(
+        upload_to='website/',
+        blank=True,
+        null=True,
+        help_text='Ikon kecil pada tab browser. Gunakan PNG persegi atau file ICO.',
+    )
+    email_kontak = models.EmailField(blank=True)
+    telepon_kontak = models.CharField(max_length=30, blank=True)
+    whatsapp = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text='Gunakan format internasional, contoh: 628118900234.',
+    )
+    alamat = models.TextField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    youtube_url = models.URLField(blank=True)
+    deskripsi_seo = models.CharField(max_length=320, blank=True)
+    teks_footer = models.CharField(
+        max_length=200,
+        default='Seluruh hak cipta dilindungi undang-undang.',
+    )
+    diperbarui = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Pengaturan Website'
+        verbose_name_plural = 'Pengaturan Website'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.nama_website
+
+#9 Hero Slide
+class HeroSlide(models.Model):
+    tagline = models.CharField(max_length=100, default='MASTERPIECE COLLECTION')
+    judul = models.CharField(max_length=140)
+    judul_aksen = models.CharField(max_length=140)
+    deskripsi = models.TextField(max_length=500)
+    gambar = models.ImageField(upload_to='hero_slides/')
+    label_tombol = models.CharField(max_length=50, default='JELAJAHI PROPERTI')
+    urutan = models.PositiveSmallIntegerField(default=1)
+    aktif = models.BooleanField(default=True)
+    dibuat = models.DateTimeField(auto_now_add=True)
+    diperbarui = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['urutan', '-dibuat']
+        verbose_name = 'Hero Slide'
+        verbose_name_plural = 'Hero Slides'
+
+    def __str__(self):
+        return f'{self.urutan}. {self.judul} {self.judul_aksen}'
