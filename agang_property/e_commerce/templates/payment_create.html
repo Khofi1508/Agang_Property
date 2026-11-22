@@ -29,54 +29,23 @@
         </section>
 
         <div class="layout">
-            <section class="panel" id="kpr-calculator" data-property-price="{{ prop.harga }}">
-                <span class="eyebrow">Perencanaan Pembiayaan</span><h2>Simulasi KPR</h2><p class="sub">Perkiraan angsuran; nilai final mengikuti penilaian dan ketentuan bank.</p>
-                <div class="columns">
-                    <div>
-                        <div class="control-card">
-                            <div class="control-title"><span>Harga properti</span><strong class="number">Rp {{ prop.harga_format_titik }}</strong></div>
-                            <div class="divider"></div>
-                            <div class="control-title"><span>Down Payment</span><strong><span id="dp-percent">10</span>% · Rp <span id="dp-amount">0</span></strong></div>
-                            <input id="dp-range" type="range" min="1" max="50" step="1" value="10" aria-label="Persentase DP">
-                            <div class="limits"><span>1%</span><span>50%</span></div>
-                            <div class="divider"></div>
-                            <div class="control-title"><span>Suku bunga fix per tahun</span><strong><span id="rate-value">4.50</span>%</strong></div>
-                            <input id="rate-range" type="range" min="1" max="15" step="0.5" value="4.5" aria-label="Suku bunga tetap">
-                            <div class="limits"><span>1%</span><span>15%</span></div>
-                            <div class="divider"></div>
-                            <div class="selectline"><label for="fixed-years">Masa kredit fix</label><select id="fixed-years"><option value="1" selected>1 tahun</option><option value="2">2 tahun</option><option value="3">3 tahun</option><option value="5">5 tahun</option><option value="10">10 tahun</option><option value="15">15 tahun</option><option value="20">20 tahun</option></select></div>
-                            <div class="small">Bunga floating setelah masa fix disimulasikan sebesar 12% per tahun.</div>
-                            <div class="divider"></div>
-                            <div class="control-title"><label for="tenor-range">Jangka waktu KPR</label><strong><span id="tenor-value">15</span> tahun</strong></div>
-                            <input id="tenor-range" type="range" min="5" max="30" step="1" value="15" aria-label="Tenor KPR">
-                            <div class="limits"><span>5 tahun</span><span>30 tahun</span></div>
-                            <button id="simulate-button" class="button pay" type="button" style="width:100%;margin-top:15px">Simulasikan</button>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="summary-card">
-                            <span class="eyebrow">Rincian pembayaran KPR</span>
-                            <div class="row total"><span>Angsuran masa fix</span><b id="fixed-payment">Rp 0 / bulan</b></div>
-                            <div class="row"><span>Angsuran setelah fix (estimasi 12%)</span><b id="floating-payment">Rp 0 / bulan</b></div>
-                            <div class="row"><span>Pokok pinjaman</span><b id="loan-amount">Rp 0</b></div>
-                            <div class="row"><span>Estimasi total bunga KPR</span><b id="interest-total">Rp 0</b></div>
-                        </div>
-                        <div class="summary-card">
-                            <span class="eyebrow">Perkiraan bayar di awal</span>
-                            <div class="row total"><span>Down Payment</span><b id="initial-dp">Rp 0</b></div>
-                            <div class="row"><span>Angsuran pertama</span><b id="first-installment">Rp 0</b></div>
-                            <div class="row"><span>Biaya legalitas / administrasi</span><b>Belum termasuk</b></div>
-                            <div class="row total"><span>Estimasi dana awal</span><b id="initial-total">Rp 0</b></div>
-                        </div>
-                        <div class="info">Kalkulator ini hanya simulasi. DP yang ditagihkan di bawah adalah persentase dari harga properti. Biaya notaris, pajak, dan biaya bank dikonfirmasi terpisah.</div>
-                    </div>
+            <section class="panel" id="dp-selector" data-property-price="{{ prop.harga }}">
+                <span class="eyebrow">Rincian uang muka</span><h2>Tentukan DP</h2><p class="sub">Pilih persentase uang muka yang ingin dibayarkan untuk reservasi unit ini.</p>
+                <div class="control-card">
+                    <div class="control-title"><span>Harga properti</span><strong class="number">Rp {{ prop.harga_format_titik }}</strong></div>
+                    <div class="divider"></div>
+                    <div class="control-title"><label for="dp-range">Uang muka / Down Payment</label><strong><span id="dp-percent">10</span>%</strong></div>
+                    <input id="dp-range" type="range" min="1" max="50" step="1" value="10" aria-label="Persentase DP">
+                    <div class="limits"><span>1%</span><span>50%</span></div>
+                    <div class="summary-card" style="margin:18px 0 0"><div class="row total"><span>DP yang dibayarkan</span><b>Rp <span id="dp-amount">0</span></b></div><div class="row"><span>Sisa harga properti</span><b>Rp <span id="remaining-amount">0</span></b></div></div>
                 </div>
+                <div class="info">Nilai DP dihitung dari persentase harga properti. Simulasi cicilan KPR tersedia pada halaman detail unit; biaya notaris, pajak, dan biaya bank dikonfirmasi terpisah.</div>
             </section>
 
             <aside class="panel">
                 <span class="eyebrow">Metode pembayaran</span><h2>Pilih cara bayar</h2><p class="sub">Pembayaran diproses lewat halaman checkout resmi Midtrans.</p>
                 <form method="post" id="payment-form">
-                    {% csrf_token %}<input type="hidden" id="form-dp-percent" name="dp_percent" value="10"><input type="hidden" id="form-annual-rate" name="annual_rate" value="4.5"><input type="hidden" id="form-fixed-years" name="fixed_years" value="1"><input type="hidden" id="form-tenor-years" name="tenor_years" value="15">
+                    {% csrf_token %}<input type="hidden" id="form-dp-percent" name="dp_percent" value="10">
                     <div class="payment-choice"><input type="radio" checked aria-label="Midtrans Snap Sandbox"><div><strong>Midtrans Sandbox</strong><small>Pilih Virtual Account, QRIS, e-wallet, kartu, atau kanal lain yang aktif di Snap.</small></div></div>
                     <div class="info">Daftarkan URL ini sebagai Payment Notification URL di Midtrans Dashboard → Settings → Configuration: <b>{{ midtrans_notification_url|default:'Isi MIDTRANS_NOTIFICATION_URL pada .env' }}</b>. Tunnel ngrok harus aktif agar Midtrans dapat mengirim notifikasi.</div>
                     <div class="summary-card"><div class="row"><span>Properti</span><b>{{ prop.nama_properti }}</b></div><div class="row"><span>DP <span id="checkout-dp-label">10</span>%</span><b>Rp <span id="checkout-dp-amount">0</span></b></div><div class="row total"><span>Total dibayar</span><b>Rp <span id="checkout-total">0</span></b></div></div>
@@ -89,56 +58,23 @@
     </main>
     <script>
     (() => {
-        const box = document.getElementById('kpr-calculator');
+        const box = document.getElementById('dp-selector');
         const price = Number(box.dataset.propertyPrice);
         const dp = document.getElementById('dp-range');
-        const rate = document.getElementById('rate-range');
-        const fixed = document.getElementById('fixed-years');
-        const tenor = document.getElementById('tenor-range');
         const rupiah = new Intl.NumberFormat('id-ID', {maximumFractionDigits: 0});
-        const money = value => `Rp ${rupiah.format(Math.max(0, Math.round(value)))}`;
-        function installment(balance, annualRate, months) {
-            if (months <= 0) return 0;
-            const monthlyRate = annualRate / 1200;
-            if (!monthlyRate) return balance / months;
-            return balance * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
-        }
-        function balanceAfter(balance, monthly, annualRate, months) {
-            const monthlyRate = annualRate / 1200;
-            if (!monthlyRate) return Math.max(0, balance - monthly * months);
-            return Math.max(0, balance * Math.pow(1 + monthlyRate, months) - monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate));
-        }
         function update() {
-            const percent = Number(dp.value), annual = Number(rate.value), tenure = Number(tenor.value);
-            const fixedYears = Math.min(Number(fixed.value), tenure);
-            fixed.value = fixedYears;
+            const percent = Number(dp.value);
             const dpAmount = price * percent / 100;
-            const principal = price - dpAmount;
-            const firstPayment = installment(principal, annual, tenure * 12);
-            const afterFixed = balanceAfter(principal, firstPayment, annual, fixedYears * 12);
-            const floatingPayment = installment(afterFixed, 12, Math.max(1, (tenure - fixedYears) * 12));
-            const estimatedInterest = Math.max(0, firstPayment * fixedYears * 12 + floatingPayment * Math.max(0, tenure - fixedYears) * 12 - principal);
+            const remaining = price - dpAmount;
             document.getElementById('dp-percent').textContent = percent;
             document.getElementById('dp-amount').textContent = rupiah.format(dpAmount);
-            document.getElementById('rate-value').textContent = annual.toFixed(2);
-            document.getElementById('tenor-value').textContent = tenure;
-            document.getElementById('fixed-payment').textContent = `${money(firstPayment)} / bulan`;
-            document.getElementById('floating-payment').textContent = `${money(floatingPayment)} / bulan`;
-            document.getElementById('loan-amount').textContent = money(principal);
-            document.getElementById('interest-total').textContent = money(estimatedInterest);
-            document.getElementById('initial-dp').textContent = money(dpAmount);
-            document.getElementById('first-installment').textContent = money(firstPayment);
-            document.getElementById('initial-total').textContent = money(dpAmount + firstPayment);
+            document.getElementById('remaining-amount').textContent = rupiah.format(remaining);
             document.getElementById('checkout-dp-label').textContent = percent;
             document.getElementById('checkout-dp-amount').textContent = rupiah.format(dpAmount);
             document.getElementById('checkout-total').textContent = rupiah.format(dpAmount);
             document.getElementById('form-dp-percent').value = percent;
-            document.getElementById('form-annual-rate').value = annual;
-            document.getElementById('form-fixed-years').value = fixedYears;
-            document.getElementById('form-tenor-years').value = tenure;
         }
-        [dp, rate, fixed, tenor].forEach(control => control.addEventListener('input', update));
-        document.getElementById('simulate-button').addEventListener('click', update);
+        dp.addEventListener('input', update);
         document.getElementById('payment-form').addEventListener('submit', () => { update(); });
         update();
     })();

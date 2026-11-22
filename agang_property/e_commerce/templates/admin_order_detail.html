@@ -1,0 +1,70 @@
+{% extends 'admin_base.html' %}
+
+{% block extra_head %}
+<style>
+    .detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}.detail-heading h2{margin:4px 0 7px;font:700 25px var(--serif);color:#f7f2eb}.detail-heading p{margin:0;color:var(--muted);font-size:11px}.order-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.order-detail-card{min-width:0;padding:18px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}.order-detail-card h3{margin:0 0 13px;color:var(--gold-light);font:600 16px var(--serif)}.detail-list{margin:0}.detail-row{display:grid;grid-template-columns:minmax(130px,.75fr) minmax(0,1.25fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.detail-row:last-child{border-bottom:0}.detail-row dt{color:var(--muted);font-size:10px}.detail-row dd{margin:0;color:#f4f1ec;font-size:11px;overflow-wrap:anywhere}.detail-row dd a{color:var(--gold-light)}.detail-row .emphasis{color:var(--gold);font:700 18px var(--serif)}.payload-block{max-height:420px;overflow:auto;padding:14px;border:1px solid var(--line);border-radius:6px;background:#111113;color:#d8d3ca;font:10px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.detail-table{width:100%;border-collapse:collapse;font-size:10px}.detail-table th,.detail-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.detail-table th{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.detail-table td{color:#eee9e1;overflow-wrap:anywhere}.readonly-note{margin-top:12px;padding:11px 13px;border:1px solid #514123;border-radius:6px;background:#332912;color:#f1dfad;font-size:10px}.button-icon{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}@media(max-width:760px){.order-detail-grid{grid-template-columns:1fr}.detail-row{grid-template-columns:1fr;gap:3px}}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="detail-heading">
+            <div><span class="admin-eyebrow">Reservasi Properti · Rekaman pembayaran</span><h2>Detail Pesanan</h2><p>Invoice {{ order.invoice_number }} · dibuat {{ order.dibuat|date:'d M Y, H:i' }}</p></div>
+            <div class="admin-actions"><span class="status-pill order-status-pill {{ order.status }}">{{ order.get_status_display }}</span><a class="admin-button secondary" href="{% url 'admin_orders' %}"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg>Kembali ke pesanan</a></div>
+        </div>
+        <div class="readonly-note">Rincian pesanan ditampilkan sebagai data baca-saja, mengikuti pengaturan PaymentOrder pada Django Admin agar catatan dan konfirmasi gateway tidak berubah tanpa notifikasi resmi.</div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="order-detail-grid">
+        <article class="order-detail-card">
+            <h3>Pesanan dan pelanggan</h3>
+            <dl class="detail-list">
+                <div class="detail-row"><dt>Nomor invoice</dt><dd>{{ order.invoice_number }}</dd></div>
+                <div class="detail-row"><dt>Reference</dt><dd>{{ order.reference }}</dd></div>
+                <div class="detail-row"><dt>Pelanggan</dt><dd><a href="{% url 'admin_user_edit' order.user_id %}">{{ order.user.get_full_name|default:order.user.username }} (@{{ order.user.username }})</a><br>{{ order.user.email|default:'Email belum diisi' }}</dd></div>
+                <div class="detail-row"><dt>Properti</dt><dd><a href="{% url 'admin_property_edit' order.properti_id %}">{{ order.properti.nama_properti }}</a><br>{{ order.properti.kode_properti }} · {{ order.properti.lokasi_detail }}</dd></div>
+                <div class="detail-row"><dt>Jumlah DP</dt><dd class="emphasis">Rp {{ order.jumlah_dp_format }}</dd></div>
+                <div class="detail-row"><dt>Persentase DP</dt><dd>{{ order.persentase_dp }}%</dd></div>
+                <div class="detail-row"><dt>Bunga tetap</dt><dd>{{ order.bunga_tetap }}% · {{ order.masa_bunga_tetap }} tahun</dd></div>
+                <div class="detail-row"><dt>Tenor KPR</dt><dd>{{ order.tenor_tahun }} tahun</dd></div>
+            </dl>
+        </article>
+        <article class="order-detail-card">
+            <h3>Status dan metode pembayaran</h3>
+            <dl class="detail-list">
+                <div class="detail-row"><dt>Status pesanan</dt><dd><span class="status-pill order-status-pill {{ order.status }}">{{ order.get_status_display }}</span></dd></div>
+                <div class="detail-row"><dt>Gateway</dt><dd>{{ order.get_payment_gateway_display }}</dd></div>
+                <div class="detail-row"><dt>Metode</dt><dd>{{ order.metode_pembayaran|default:'-' }}</dd></div>
+                <div class="detail-row"><dt>Tipe pembayaran</dt><dd>{{ order.payment_type|default:'-' }}</dd></div>
+                <div class="detail-row"><dt>Bank / channel</dt><dd>{{ order.nama_bank|default:'-' }}{% if order.payment_channel %} · {{ order.payment_channel }}{% endif %}</dd></div>
+                <div class="detail-row"><dt>Nomor VA</dt><dd>{{ order.nomor_virtual_account|default:'-' }}</dd></div>
+                <div class="detail-row"><dt>Transaction ID</dt><dd>{{ order.payment_transaction_id|default:'-' }}</dd></div>
+                <div class="detail-row"><dt>Payment URL</dt><dd>{% if order.payment_url %}<a href="{{ order.payment_url }}" target="_blank" rel="noopener">Buka tautan pembayaran</a>{% else %}-{% endif %}</dd></div>
+                <div class="detail-row"><dt>Payment token</dt><dd>{{ order.payment_token|default:'-' }}</dd></div>
+            </dl>
+        </article>
+        <article class="order-detail-card">
+            <h3>Waktu pembayaran</h3>
+            <dl class="detail-list">
+                <div class="detail-row"><dt>Jatuh tempo</dt><dd>{{ order.jatuh_tempo|date:'D, d M Y · H:i' }}</dd></div>
+                <div class="detail-row"><dt>Dibayar pada</dt><dd>{{ order.dibayar_pada|date:'D, d M Y · H:i'|default:'Belum dibayar' }}</dd></div>
+                <div class="detail-row"><dt>Dibuat</dt><dd>{{ order.dibuat|date:'D, d M Y · H:i' }}</dd></div>
+                <div class="detail-row"><dt>Diperbarui</dt><dd>{{ order.diperbarui|date:'D, d M Y · H:i' }}</dd></div>
+            </dl>
+        </article>
+        <article class="order-detail-card">
+            <h3>Riwayat notifikasi gateway</h3>
+            <div class="admin-table-wrap"><table class="detail-table"><thead><tr><th>Event</th><th>Diterima</th></tr></thead><tbody>
+                {% for event in notification_events %}<tr><td>{{ event.event_key }}</td><td>{{ event.diterima|date:'d M Y, H:i:s' }}</td></tr>{% empty %}<tr><td colspan="2" class="admin-empty">Belum ada notifikasi gateway tercatat.</td></tr>{% endfor %}
+            </tbody></table></div>
+        </article>
+        <article class="order-detail-card" style="grid-column:1/-1">
+            <h3>Payment payload</h3>
+            <pre class="payload-block">{{ payment_payload_json }}</pre>
+        </article>
+    </div>
+</section>
+{% endblock %}

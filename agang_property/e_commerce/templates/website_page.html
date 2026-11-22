@@ -30,7 +30,7 @@
 <body>
 <header><div class="wrap nav">
     <a href="{% url 'home' %}" class="brand">{% include 'partials/site_logo_image.html' with logo_class='article-site-logo' %}</a>
-    <nav aria-label="Navigasi halaman"><a href="{% url 'home' %}">HOME</a><a href="{% url 'catalog' %}">KATALOG</a><a href="{% url 'article_list' %}">ARTIKEL</a>{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul|upper }}</a>{% endfor %}</nav>
+    <nav aria-label="Navigasi halaman"><a href="{% url 'home' %}">HOME</a><a href="{% url 'gallery' %}">GALLERY</a><a href="{% url 'catalog' %}">KATALOG</a><a href="{% url 'article_list' %}">ARTIKEL</a><a href="{% url 'about_us' %}">ABOUT US</a>{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul|upper }}</a>{% endfor %}</nav>
 </div></header>
 <main class="wrap">
     <div class="breadcrumbs"><a href="{% url 'home' %}">Beranda</a> &nbsp;›&nbsp; {{ page.judul }}</div>
@@ -43,7 +43,7 @@
 </main>
 <footer><div class="wrap footer-row">
     {% include 'partials/site_logo_image.html' with logo_class='footer-logo' %}
-    <nav class="page-links" aria-label="Halaman informasi">{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul }}</a>{% endfor %}<a href="{% url 'article_list' %}">Artikel</a><a href="{% url 'sitemap' %}">Sitemap</a></nav>
+    <nav class="page-links" aria-label="Halaman informasi"><a href="{% url 'gallery' %}">Gallery</a><a href="{% url 'about_us' %}">About Us</a>{% for item in public_pages %}<a href="{{ item.get_absolute_url }}">{{ item.judul }}</a>{% endfor %}<a href="{% url 'article_list' %}">Artikel</a><a href="{% url 'sitemap' %}">Sitemap</a></nav>
     <span>© 2026 Agang Property</span>
 </div></footer>
 </body>

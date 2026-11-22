@@ -11,6 +11,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
+from django.forms import inlineformset_factory
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
@@ -22,7 +24,17 @@ from django.contrib import messages
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from .forms import ArticleCategoryForm, ArticleForm, HeroSlideForm, WebSettingForm, WebsitePageForm
+from .forms import (
+    AdminUserForm,
+    ArticleCategoryForm,
+    ArticleForm,
+    HeroSlideForm,
+    PropertyCategoryForm,
+    PropertyForm,
+    SurveyBookingForm,
+    WebSettingForm,
+    WebsitePageForm,
+)
 from .models import (
     Article,
     ArticleCategory,
@@ -52,6 +64,31 @@ from .midtrans import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _fetch_midtrans_status_for_order(payment_order, identifiers):
+    """Try known Midtrans identifiers and accept only a response for this invoice."""
+    tried = set()
+    last_error = None
+    for identifier in identifiers:
+        identifier = str(identifier or '').strip()
+        if not identifier or identifier in tried:
+            continue
+        tried.add(identifier)
+        try:
+            payload = fetch_snap_transaction_status(identifier)
+        except MidtransError as exc:
+            last_error = exc
+            continue
+        if str(payload.get('order_id', '')) == payment_order.invoice_number:
+            return payload
+        last_error = MidtransError(
+            'Respons Status API Midtrans tidak cocok dengan invoice '
+            f'{payment_order.invoice_number} (order_id={payload.get("order_id", "-")}).'
+        )
+    if last_error:
+        raise last_error
+    raise MidtransError('Tidak ada ID transaksi Midtrans yang dapat diverifikasi.')
 
 # Fungsi pengecekan apakah user adalah Admin (Superuser)
 def is_admin(user):
@@ -87,6 +124,142 @@ def home_view(request):
         'hero_slides': hero_slides,
     }
     return render(request, 'home.html', context)
+
+
+def gallery_view(request):
+    """Public editorial gallery. Captions let admins classify additional photos."""
+    properties = Property.objects.prefetch_related('foto_galeri').order_by('-tanggal_dibuat')
+    category_labels = {
+        'exterior': 'Exterior Views',
+        'interior': 'Interior Spaces',
+        'neighborhood': 'The Neighborhood',
+        'architecture': 'Architectural Details',
+    }
+    entries_by_category = {key: [] for key in category_labels}
+    unclassified_entries = []
+    total_photos = 0
+
+    def classify_gallery_photo(caption, is_cover=False):
+        if is_cover:
+            return 'exterior'
+        text = (caption or '').casefold()
+        if any(word in text for word in ('interior', 'ruang', 'kamar', 'dapur', 'kitchen', 'living')):
+            return 'interior'
+        if any(word in text for word in ('kawasan', 'lingkungan', 'neighbourhood', 'neighborhood', 'taman', 'cluster')):
+            return 'neighborhood'
+        if any(word in text for word in ('arsitektur', 'material', 'detail', 'architecture', 'texture', 'fasad', 'exterior', 'eksterior')):
+            return 'architecture' if any(word in text for word in ('arsitektur', 'material', 'detail', 'architecture', 'texture')) else 'exterior'
+        # Keep photos without a descriptive caption in the general collection.
+        return ''
+
+    for properti in properties:
+        if properti.gambar_utama:
+            category = classify_gallery_photo(properti.nama_properti, is_cover=True)
+            entry = {
+                'property': properti,
+                'image_url': properti.gambar_utama.url,
+                'caption': properti.nama_properti,
+                'alt': f'Foto utama {properti.nama_properti}',
+                'category': category,
+                'is_cover': True,
+            }
+            entries_by_category[category].append(entry)
+            total_photos += 1
+        for photo in properti.foto_galeri.all():
+            category = classify_gallery_photo(photo.keterangan)
+            entry = {
+                'property': properti,
+                'image_url': photo.gambar.url,
+                'caption': photo.keterangan or properti.nama_properti,
+                'alt': photo.keterangan or f'Galeri {properti.nama_properti}',
+                'category': category,
+                'is_cover': False,
+            }
+            if category:
+                entries_by_category[category].append(entry)
+            else:
+                unclassified_entries.append(entry)
+            total_photos += 1
+
+    property_list = list(properties)
+    if not entries_by_category['neighborhood']:
+        for properti in property_list[:4]:
+            if not properti.gambar_utama:
+                continue
+            entries_by_category['neighborhood'].append({
+                'property': properti,
+                'image_url': properti.gambar_utama.url,
+                'caption': properti.fasilitas_lingkungan,
+                'alt': f'Properti dan fasilitas kawasan {properti.nama_properti}',
+                'category': 'neighborhood',
+                'is_cover': True,
+                'property_summary': True,
+            })
+
+    gallery_groups = [
+        {
+            'key': key,
+            'label': category_labels[key],
+            'entries': entries,
+            'count': len(entries),
+        }
+        for key, entries in entries_by_category.items() if entries or key == 'interior'
+    ]
+    if unclassified_entries:
+        gallery_groups.append({
+            'key': 'collection',
+            'label': 'Property Albums',
+            'entries': unclassified_entries,
+            'count': len(unclassified_entries),
+        })
+    featured_property = property_list[0] if property_list else None
+    return render(request, 'gallery.html', {
+        'gallery_groups': gallery_groups,
+        'gallery_categories': [
+            {'key': key, 'label': label, 'count': len(entries_by_category[key])}
+            for key, label in category_labels.items()
+        ],
+        'total_photos': total_photos,
+        'property_count': len(property_list),
+        'available_property_count': sum(
+            property.status_penjualan == Property.StatusPenjualan.AVAILABLE
+            for property in property_list
+        ),
+        'properties': property_list,
+        'featured_property': featured_property,
+        'canonical_url': request.build_absolute_uri(reverse('gallery')),
+    })
+
+
+def about_us_view(request):
+    """Brand story and service principles for Agang Property."""
+    featured_property = Property.objects.order_by('-tanggal_dibuat').first()
+    return render(request, 'about_us.html', {
+        'featured_property': featured_property,
+        'leadership_team': [
+            {
+                'name': 'Ahmad Fadzel Idrus',
+                'role': 'CEO',
+                'photo': 'e_commerce/images/team/ahmad-fadzel-idrus.jpg',
+            },
+            {
+                'name': 'Kholid Firdaus',
+                'role': 'Operation',
+                'photo': 'e_commerce/images/team/kholid-firdaus.jpg',
+            },
+            {
+                'name': 'Muh. Rifky Putra Handoko',
+                'role': 'Marketing',
+                'photo': 'e_commerce/images/team/muh-rifky-putra-handoko.jpg',
+            },
+            {
+                'name': 'Nur Alim',
+                'role': 'Product / Platform',
+                'photo': 'e_commerce/images/team/nur-alim.jpg',
+            },
+        ],
+        'canonical_url': request.build_absolute_uri(reverse('about_us')),
+    })
 
 
 # ==========================================
@@ -227,6 +400,52 @@ def admin_users_view(request):
 
 
 @user_passes_test(is_admin, login_url='login')
+def admin_user_create_view(request):
+    form = AdminUserForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        account = form.save()
+        messages.success(request, f'Akun @{account.username} berhasil dibuat.')
+        return redirect('admin_users')
+    return render(request, 'admin_user_form.html', {
+        'page_title': 'Tambah User',
+        'active_nav': 'users',
+        'form': form,
+        'is_create': True,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_user_edit_view(request, pk):
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    form = AdminUserForm(request.POST or None, request.FILES or None, instance=account)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, f'Akun @{account.username} berhasil diperbarui.')
+        return redirect('admin_users')
+    return render(request, 'admin_user_form.html', {
+        'page_title': f'Edit User · {account.username}',
+        'active_nav': 'users',
+        'form': form,
+        'account': account,
+        'is_create': False,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_user_delete_view(request, pk):
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    username = account.username
+    try:
+        account.delete()
+    except ProtectedError:
+        messages.error(request, f'Akun @{username} memiliki riwayat transaksi. Nonaktifkan akun agar riwayat tetap tersimpan.')
+    else:
+        messages.success(request, f'Akun @{username} berhasil dihapus.')
+    return redirect('admin_users')
+
+
+@user_passes_test(is_admin, login_url='login')
 def admin_orders_view(request):
     PaymentOrder.objects.filter(
         status=PaymentOrder.Status.PENDING,
@@ -266,39 +485,312 @@ def admin_orders_view(request):
 
 
 @user_passes_test(is_admin, login_url='login')
+def admin_order_detail_view(request, pk):
+    order = get_object_or_404(
+        PaymentOrder.objects.select_related('user', 'properti').prefetch_related('notifications'),
+        pk=pk,
+    )
+    if order.status == PaymentOrder.Status.PENDING and order.jatuh_tempo <= timezone.now():
+        order.status = PaymentOrder.Status.EXPIRED
+        order.save(update_fields=['status', 'diperbarui'])
+    return render(request, 'admin_order_detail.html', {
+        'page_title': f'Detail Pesanan · {order.invoice_number}',
+        'active_nav': 'orders',
+        'order': order,
+        'notification_events': order.notifications.all(),
+        'payment_payload_json': json.dumps(order.payment_payload or {}, indent=2, ensure_ascii=False),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
 def admin_properties_view(request):
-    if request.method == 'POST' and 'tambah_properti' in request.POST:
-        kategori_obj = get_object_or_404(Category, id=request.POST.get('kategori'))
-        properti_baru = Property.objects.create(
-            kategori=kategori_obj,
-            nama_properti=request.POST.get('nama_properti'),
-            kota=request.POST.get('kota'),
-            lokasi_detail=request.POST.get('lokasi_detail'),
-            harga=request.POST.get('harga'),
-            badge_status=request.POST.get('badge_status') or 'SIAP HUNI',
-            kamar_tidur=request.POST.get('kamar_tidur'),
-            kamar_mandi=request.POST.get('kamar_mandi'),
-            luas_bangunan=request.POST.get('luas_bangunan'),
-            status_kepemilikan=request.POST.get(
-                'status_kepemilikan', 'SHM (Hak Milik) + IMB / PBG'
-            ),
-            deskripsi_singkat=request.POST.get('deskripsi_singkat'),
-            gambar_utama=request.FILES.get('gambar_utama'),
-            youtube_video_url=request.POST.get('youtube_video_url', '').strip(),
-        )
-        for index, image in enumerate(request.FILES.getlist('gallery_images'), start=1):
-            PropertyGalleryImage.objects.create(properti=properti_baru, gambar=image, urutan=index)
-        messages.success(request, 'Data properti baru berhasil ditambahkan.')
+    if request.method == 'POST' and 'update_listing' in request.POST:
+        properti = get_object_or_404(Property, pk=request.POST.get('property_id'))
+        status = request.POST.get('status_penjualan', '')
+        badge = request.POST.get('badge_status', '').strip()
+        badge_kedua = request.POST.get('badge_kedua', '').strip()
+        badge_ketiga = request.POST.get('badge_ketiga', '').strip()
+        tampil_di_home = bool(request.POST.get('tampil_di_home'))
+        valid_statuses = {value for value, _label in Property.StatusPenjualan.choices}
+        if status not in valid_statuses or not badge or any(len(value) > 50 for value in (badge, badge_kedua, badge_ketiga)):
+            messages.error(request, 'Status penjualan atau badge tidak valid. Badge utama wajib diisi dan setiap badge maksimal 50 karakter.')
+        else:
+            properti.status_penjualan = status
+            properti.badge_status = badge
+            properti.badge_kedua = badge_kedua or None
+            properti.badge_ketiga = badge_ketiga or None
+            properti.tampil_di_home = tampil_di_home
+            properti.save(update_fields=['status_penjualan', 'badge_status', 'badge_kedua', 'badge_ketiga', 'tampil_di_home'])
+            messages.success(request, f'Status, badge, dan tampilan beranda {properti.nama_properti} berhasil diperbarui.')
         return redirect('admin_properties')
 
+    properties = Property.objects.select_related('kategori').order_by('-tanggal_dibuat')
+    query = request.GET.get('q', '').strip()
+    property_status = request.GET.get('status', 'all')
+    category_id = request.GET.get('category', 'all')
+    city = request.GET.get('city', 'all')
+    home_visibility = request.GET.get('home', 'all')
+    if query:
+        properties = properties.filter(
+            Q(nama_properti__icontains=query)
+            | Q(kode_properti__icontains=query)
+            | Q(nama_cluster__icontains=query)
+            | Q(kota__icontains=query)
+            | Q(lokasi_detail__icontains=query)
+        )
+    if property_status in {Property.StatusPenjualan.AVAILABLE, Property.StatusPenjualan.SOLD}:
+        properties = properties.filter(status_penjualan=property_status)
+    else:
+        property_status = 'all'
+    try:
+        category_id = int(category_id)
+    except (TypeError, ValueError):
+        category_id = 'all'
+    if category_id != 'all' and Category.objects.filter(pk=category_id).exists():
+        properties = properties.filter(kategori_id=category_id)
+    else:
+        category_id = 'all'
+    valid_cities = set(Property.objects.order_by().values_list('kota', flat=True).distinct())
+    if city in valid_cities:
+        properties = properties.filter(kota=city)
+    else:
+        city = 'all'
+    if home_visibility == 'yes':
+        properties = properties.filter(tampil_di_home=True)
+    elif home_visibility == 'no':
+        properties = properties.filter(tampil_di_home=False)
+    else:
+        home_visibility = 'all'
+    page_obj = Paginator(properties, 20).get_page(request.GET.get('page'))
+    all_properties = Property.objects.all()
     context = {
         'page_title': 'Kelola Properti',
         'active_nav': 'properties',
-        'categories': Category.objects.all(),
-        'properties': Property.objects.select_related('kategori').order_by('-tanggal_dibuat'),
-        'total_properti': Property.objects.count(),
+        'page_obj': page_obj,
+        'query': query,
+        'property_status': property_status,
+        'category_id': category_id,
+        'city': city,
+        'home_visibility': home_visibility,
+        'property_categories': Category.objects.order_by('nama_kategori'),
+        'property_cities': sorted(valid_cities),
+        'total_properti': all_properties.count(),
+        'available_properties': all_properties.filter(status_penjualan=Property.StatusPenjualan.AVAILABLE).count(),
+        'sold_properties': all_properties.filter(status_penjualan=Property.StatusPenjualan.SOLD).count(),
     }
     return render(request, 'admin_properties.html', context)
+
+
+PROPERTY_FIELDSETS = (
+    ('Identitas dan lokasi', ('kategori', 'nama_cluster', 'nama_properti', 'kode_properti', 'kota', 'lokasi_detail')),
+    ('Harga, badge, dan status', ('harga', 'harga_coret', 'estimasi_cicilan', 'badge_status', 'badge_kedua', 'badge_ketiga', 'status_legalitas', 'status_penjualan', 'tampil_di_home')),
+    ('Foto dan deskripsi', ('gambar_utama', 'deskripsi_singkat', 'deskripsi_panjang', 'youtube_video_url')),
+    ('Spesifikasi unit', ('jumlah_lantai', 'kamar_tidur', 'kamar_mandi', 'luas_bangunan', 'luas_tanah', 'arah_hadap', 'daftar_furnitur', 'fasilitas_lingkungan')),
+    ('Legalitas dan konstruksi', ('status_kepemilikan', 'daya_listrik', 'sumber_air', 'pondasi', 'struktur_dinding', 'kusen_jendela', 'lantai_utama', 'sanitari_km', 'rangka_atap', 'lebar_jalan_row')),
+    ('Informasi investasi', ('ulasan_investasi',)),
+)
+
+
+def _property_form_sections(form):
+    return [(title, [form[name] for name in field_names]) for title, field_names in PROPERTY_FIELDSETS]
+
+
+def _property_gallery_formset():
+    return inlineformset_factory(
+        Property,
+        PropertyGalleryImage,
+        fields=('gambar', 'keterangan', 'urutan'),
+        extra=2,
+        can_delete=True,
+    )
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_property_create_view(request):
+    form = PropertyForm(request.POST or None, request.FILES or None)
+    gallery_formset_class = _property_gallery_formset()
+    formset = gallery_formset_class(
+        request.POST or None,
+        request.FILES or None,
+        instance=form.instance,
+        prefix='foto_galeri',
+    )
+    if request.method == 'POST' and form.is_valid() and formset.is_valid():
+        with transaction.atomic():
+            properti = form.save()
+            formset.instance = properti
+            formset.save()
+        messages.success(request, 'Properti baru berhasil ditambahkan.')
+        return redirect('admin_properties')
+    return render(request, 'admin_property_form.html', {
+        'page_title': 'Tambah Properti',
+        'active_nav': 'properties',
+        'form': form,
+        'formset': formset,
+        'fieldsets': _property_form_sections(form),
+        'is_create': True,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_property_edit_view(request, pk):
+    properti = get_object_or_404(Property, pk=pk)
+    form = PropertyForm(request.POST or None, request.FILES or None, instance=properti)
+    gallery_formset_class = _property_gallery_formset()
+    formset = gallery_formset_class(
+        request.POST or None,
+        request.FILES or None,
+        instance=properti,
+        prefix='foto_galeri',
+    )
+    if request.method == 'POST' and form.is_valid() and formset.is_valid():
+        with transaction.atomic():
+            form.save()
+            formset.save()
+        messages.success(request, f'Data {properti.nama_properti} berhasil diperbarui.')
+        return redirect('admin_properties')
+    return render(request, 'admin_property_form.html', {
+        'page_title': f'Edit Properti · {properti.nama_properti}',
+        'active_nav': 'properties',
+        'form': form,
+        'formset': formset,
+        'fieldsets': _property_form_sections(form),
+        'properti': properti,
+        'is_create': False,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_property_delete_view(request, pk):
+    properti = get_object_or_404(Property, pk=pk)
+    nama_properti = properti.nama_properti
+    try:
+        properti.delete()
+    except ProtectedError:
+        messages.error(request, f'{nama_properti} memiliki riwayat pesanan dan tidak dapat dihapus. Ubah statusnya menjadi SOLD bila sudah terjual.')
+    else:
+        messages.success(request, f'{nama_properti} berhasil dihapus.')
+    return redirect('admin_properties')
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_property_categories_view(request):
+    form = PropertyCategoryForm()
+    if request.method == 'POST' and 'save_category' in request.POST:
+        category = get_object_or_404(Category, pk=request.POST.get('category_id'))
+        form = PropertyCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Kategori properti berhasil diperbarui.')
+            return redirect('admin_property_categories')
+    elif request.method == 'POST' and 'add_category' in request.POST:
+        form = PropertyCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Kategori properti berhasil ditambahkan.')
+            return redirect('admin_property_categories')
+    elif request.method == 'POST' and 'delete_category' in request.POST:
+        category = get_object_or_404(Category, pk=request.POST.get('category_id'))
+        if category.properties.exists():
+            messages.error(request, 'Kategori ini masih digunakan properti. Pindahkan propertinya sebelum menghapus kategori.')
+        else:
+            category.delete()
+            messages.success(request, 'Kategori properti berhasil dihapus.')
+        return redirect('admin_property_categories')
+    return render(request, 'admin_property_categories.html', {
+        'page_title': 'Kategori Properti',
+        'active_nav': 'property_categories',
+        'form': form,
+        'categories': Category.objects.all().order_by('nama_kategori'),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_surveys_view(request):
+    if request.method == 'POST' and 'update_survey_status' in request.POST:
+        survey = get_object_or_404(SurveyBooking, pk=request.POST.get('survey_id'))
+        status = request.POST.get('status', '')
+        valid_statuses = {value for value, _label in SurveyBooking.STATUS_SURVEI}
+        if status in valid_statuses:
+            survey.status = status
+            survey.save(update_fields=['status'])
+            messages.success(request, 'Status jadwal survei berhasil diperbarui.')
+        else:
+            messages.error(request, 'Status jadwal survei tidak valid.')
+        return redirect('admin_surveys')
+
+    surveys = SurveyBooking.objects.select_related('properti', 'user').order_by('-tanggal_survei', '-tanggal_dibuat')
+    query = request.GET.get('q', '').strip()
+    survey_status = request.GET.get('status', 'all')
+    if query:
+        surveys = surveys.filter(
+            Q(nama_pemohon__icontains=query)
+            | Q(no_whatsapp__icontains=query)
+            | Q(properti__nama_properti__icontains=query)
+            | Q(properti__kode_properti__icontains=query)
+            | Q(user__username__icontains=query)
+        )
+    valid_statuses = {value for value, _label in SurveyBooking.STATUS_SURVEI}
+    if survey_status in valid_statuses:
+        surveys = surveys.filter(status=survey_status)
+    else:
+        survey_status = 'all'
+    page_obj = Paginator(surveys, 20).get_page(request.GET.get('page'))
+    all_surveys = SurveyBooking.objects.all()
+    return render(request, 'admin_surveys.html', {
+        'page_title': 'Jadwal Survei',
+        'active_nav': 'surveys',
+        'page_obj': page_obj,
+        'query': query,
+        'survey_status': survey_status,
+        'survey_statuses': SurveyBooking.STATUS_SURVEI,
+        'total_surveys': all_surveys.count(),
+        'waiting_surveys': all_surveys.filter(status='Menunggu Konfirmasi').count(),
+        'scheduled_surveys': all_surveys.filter(status='Terjadwal').count(),
+        'completed_surveys': all_surveys.filter(status='Selesai').count(),
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_survey_create_view(request):
+    form = SurveyBookingForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Jadwal survei berhasil ditambahkan.')
+        return redirect('admin_surveys')
+    return render(request, 'admin_survey_form.html', {
+        'page_title': 'Tambah Jadwal Survei',
+        'active_nav': 'surveys',
+        'form': form,
+        'is_create': True,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_survey_edit_view(request, pk):
+    survey = get_object_or_404(SurveyBooking, pk=pk)
+    form = SurveyBookingForm(request.POST or None, instance=survey)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Jadwal survei berhasil diperbarui.')
+        return redirect('admin_surveys')
+    return render(request, 'admin_survey_form.html', {
+        'page_title': 'Edit Jadwal Survei',
+        'active_nav': 'surveys',
+        'form': form,
+        'survey': survey,
+        'is_create': False,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_survey_delete_view(request, pk):
+    survey = get_object_or_404(SurveyBooking, pk=pk)
+    survey.delete()
+    messages.success(request, 'Jadwal survei berhasil dihapus.')
+    return redirect('admin_surveys')
 
 
 @user_passes_test(is_admin, login_url='login')
@@ -320,11 +812,14 @@ def admin_articles_view(request):
         if article_category_form.is_valid():
             article_category_form.save()
             messages.success(request, 'Kategori artikel berhasil ditambahkan.')
-            return redirect('admin_articles')
+            return redirect('/dashboard/admin/articles/?section=categories#article-categories')
 
+    section = request.GET.get('section') or (
+        'categories' if request.method == 'POST' and 'tambah_kategori_artikel' in request.POST else 'articles'
+    )
     context = {
         'page_title': 'Kelola Artikel',
-        'active_nav': 'articles',
+        'active_nav': 'article_categories' if section == 'categories' else 'articles',
         'articles': Article.objects.select_related('kategori', 'penulis').order_by('-diperbarui'),
         'article_categories': ArticleCategory.objects.all(),
         'article_form': article_form,
@@ -333,6 +828,31 @@ def admin_articles_view(request):
         'total_artikel_terbit': Article.objects.filter(status=Article.Status.PUBLISHED).count(),
     }
     return render(request, 'admin_articles.html', context)
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_article_category_edit_view(request, pk):
+    category = get_object_or_404(ArticleCategory, pk=pk)
+    form = ArticleCategoryForm(request.POST or None, instance=category)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Kategori artikel berhasil diperbarui.')
+        return redirect('/dashboard/admin/articles/?section=categories#article-categories')
+    return render(request, 'admin_article_category_form.html', {
+        'page_title': 'Edit Kategori Artikel',
+        'active_nav': 'article_categories',
+        'form': form,
+        'category': category,
+    })
+
+
+@user_passes_test(is_admin, login_url='login')
+@require_POST
+def admin_article_category_delete_view(request, pk):
+    category = get_object_or_404(ArticleCategory, pk=pk)
+    category.delete()
+    messages.success(request, 'Kategori artikel berhasil dihapus. Artikel terkait tetap tersimpan tanpa kategori.')
+    return redirect('/dashboard/admin/articles/?section=categories#article-categories')
 
 
 @user_passes_test(is_admin, login_url='login')
@@ -706,20 +1226,13 @@ def payment_create_view(request, pk):
             return redirect('payment_create', pk=properti.pk)
         try:
             dp_percent = Decimal(request.POST.get('dp_percent', '10'))
-            annual_rate = Decimal(request.POST.get('annual_rate', '4.5'))
-            fixed_years = int(request.POST.get('fixed_years', '1'))
-            tenor_years = int(request.POST.get('tenor_years', '15'))
         except (InvalidOperation, TypeError, ValueError):
-            messages.error(request, 'Nilai simulasi DP/KPR tidak valid. Silakan periksa kembali.')
+            messages.error(request, 'Nilai persentase DP tidak valid. Silakan periksa kembali.')
             return redirect('payment_create', pk=properti.pk)
 
         if not (Decimal('1') <= dp_percent <= Decimal('50')):
             messages.error(request, 'DP harus berada di antara 1% sampai 50%.')
             return redirect('payment_create', pk=properti.pk)
-        if not (Decimal('1') <= annual_rate <= Decimal('15')) or not (1 <= fixed_years <= 20) or not (5 <= tenor_years <= 30):
-            messages.error(request, 'Pengaturan simulasi KPR berada di luar rentang yang tersedia.')
-            return redirect('payment_create', pk=properti.pk)
-
         now = timezone.now()
         invoice = f"AGDP{now:%y%m%d%H%M%S}{uuid.uuid4().hex[:6].upper()}"
         with transaction.atomic():
@@ -737,9 +1250,9 @@ def payment_create_view(request, pk):
                 properti=properti,
                 jumlah_dp=amount,
                 persentase_dp=dp_percent,
-                bunga_tetap=annual_rate,
-                masa_bunga_tetap=min(fixed_years, tenor_years),
-                tenor_tahun=tenor_years,
+                bunga_tetap=Decimal('4.50'),
+                masa_bunga_tetap=1,
+                tenor_tahun=15,
                 metode_pembayaran='Midtrans Snap',
                 payment_gateway='midtrans',
                 jatuh_tempo=now + timedelta(hours=24),
@@ -773,12 +1286,11 @@ def payment_status_view(request, reference):
         # could not be verified or delivered. Trust only the authenticated
         # Sandbox Status API response after matching invoice and amount.
         try:
-            status_lookup_id = (
-                request.GET.get('transaction_id')
-                or order.payment_transaction_id
-                or order.invoice_number
-            )
-            status_payload = fetch_snap_transaction_status(status_lookup_id)
+            status_payload = _fetch_midtrans_status_for_order(order, (
+                order.invoice_number,
+                request.GET.get('transaction_id'),
+                order.payment_transaction_id,
+            ))
             status_amount = Decimal(str(status_payload.get('gross_amount', '')))
         except (MidtransError, InvalidOperation, TypeError, ValueError) as exc:
             logger.warning('Midtrans status check failed for invoice %s: %s', order.invoice_number, exc)
@@ -917,10 +1429,11 @@ def midtrans_notification_view(request):
         if payment_order is None:
             return HttpResponse('OK')
         try:
-            # BSI VA / BI SNAP status inquiries require Midtrans' transaction_id.
-            # Other Snap channels can also be queried by transaction_id.
-            status_lookup_id = str(payload.get('transaction_id') or test_invoice)
-            authoritative_payload = fetch_snap_transaction_status(status_lookup_id)
+            authoritative_payload = _fetch_midtrans_status_for_order(payment_order, (
+                test_invoice,
+                payload.get('transaction_id'),
+                payment_order.payment_transaction_id,
+            ))
         except MidtransError as exc:
             logger.warning('Midtrans notification fallback failed for invoice %s: %s', test_invoice, exc)
             return HttpResponse('Unable to verify transaction with Midtrans', status=503)
@@ -955,12 +1468,10 @@ def midtrans_notification_view(request):
             return HttpResponseBadRequest('Amount mismatch')
 
         event_key = hashlib.sha256(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
-        _, created = PaymentNotificationEvent.objects.get_or_create(
+        PaymentNotificationEvent.objects.get_or_create(
             event_key=event_key,
             defaults={'payment': payment_order},
         )
-        if not created:
-            return HttpResponse('OK')
 
         transaction_status = str(payload.get('transaction_status', '')).lower()
         fraud_status = str(payload.get('fraud_status', '')).lower()
@@ -1174,7 +1685,7 @@ def website_page_detail_view(request, slug):
 def sitemap_view(request):
     namespace = 'http://www.sitemaps.org/schemas/sitemap/0.9'
     urlset = ElementTree.Element('urlset', {'xmlns': namespace})
-    for route_name in ('home', 'catalog', 'article_list'):
+    for route_name in ('home', 'catalog', 'gallery', 'about_us', 'article_list'):
         item = ElementTree.SubElement(urlset, 'url')
         ElementTree.SubElement(item, 'loc').text = request.build_absolute_uri(reverse(route_name))
     articles = Article.objects.filter(status=Article.Status.PUBLISHED)

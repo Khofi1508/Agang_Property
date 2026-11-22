@@ -33,9 +33,9 @@
                         <td><span class="table-primary">{{ order.properti.nama_properti }}</span><span class="table-secondary">{{ order.properti.kode_properti }}</span></td>
                         <td>Rp {{ order.jumlah_dp_format }}</td>
                         <td>{{ order.get_payment_gateway_display }}</td>
-                        <td><span class="status-pill {% if order.status == 'paid' %}live{% endif %}">{{ order.get_status_display }}</span></td>
+                        <td><span class="status-pill order-status-pill {{ order.status }}">{{ order.get_status_display }}</span></td>
                         <td>{{ order.dibuat|date:'d M Y, H:i' }}</td>
-                        <td><a class="admin-button secondary" href="/admin/e_commerce/paymentorder/{{ order.pk }}/change/">Detail</a></td>
+                        <td><a class="admin-button secondary" href="{% url 'admin_order_detail' order.pk %}"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.7"/></svg>Detail Pesanan</a></td>
                     </tr>
                     {% empty %}<tr><td colspan="8" class="admin-empty">Belum ada pesanan yang cocok.</td></tr>{% endfor %}
                 </tbody>

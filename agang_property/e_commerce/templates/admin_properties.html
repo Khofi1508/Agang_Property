@@ -4,38 +4,61 @@
 <section class="admin-section">
     <div class="admin-panel">
         <div class="admin-section-head">
-            <div><span class="admin-eyebrow">Katalog Hunian</span><h2>Kelola Properti</h2><p>Tambah unit baru dan pantau informasi properti yang tersimpan.</p></div>
-            <span class="status-pill">{{ total_properti }} unit</span>
+            <div><span class="admin-eyebrow">Katalog Hunian</span><h2>Kelola Properti</h2><p>Status READY dan SOLD serta badge unit dapat diperbarui langsung di daftar ini.</p></div>
+            <a class="admin-button gold" href="{% url 'admin_property_create' %}">+ Tambah Properti</a>
         </div>
-        <div class="admin-grid">
-            <div class="admin-panel admin-form-panel">
-                <h3>Tambah Properti</h3><p class="sub">Isi data utama di sini. Detail konstruksi dan promosi dapat dilengkapi dari Django Admin.</p>
-                <form method="post" enctype="multipart/form-data" class="admin-form-grid">
-                    {% csrf_token %}<input type="hidden" name="tambah_properti" value="1">
-                    <div class="admin-field wide"><label for="property-category">Kategori Hunian</label><select id="property-category" name="kategori" class="admin-input" required>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.nama_kategori }}</option>{% empty %}<option disabled>Buat kategori properti di Django Admin terlebih dahulu</option>{% endfor %}</select></div>
-                    <div class="admin-field wide"><label for="property-name">Nama Properti</label><input id="property-name" class="admin-input" type="text" name="nama_properti" required></div>
-                    <div class="admin-field"><label for="property-city">Kota</label><input id="property-city" class="admin-input" type="text" name="kota" value="Makassar" required></div>
-                    <div class="admin-field"><label for="property-location">Lokasi Detail</label><input id="property-location" class="admin-input" type="text" name="lokasi_detail" required></div>
-                    <div class="admin-field"><label for="property-price">Harga (Rp)</label><input id="property-price" class="admin-input" type="number" name="harga" min="0" required></div>
-                    <div class="admin-field"><label for="property-badge">Badge</label><input id="property-badge" class="admin-input" type="text" name="badge_status" value="SIAP HUNI"></div>
-                    <div class="admin-field"><label for="property-bedrooms">Kamar Tidur</label><input id="property-bedrooms" class="admin-input" type="text" name="kamar_tidur" value="2 KT" required></div>
-                    <div class="admin-field"><label for="property-bathrooms">Kamar Mandi</label><input id="property-bathrooms" class="admin-input" type="number" name="kamar_mandi" min="1" value="1" required></div>
-                    <div class="admin-field"><label for="property-area">Luas Bangunan (m²)</label><input id="property-area" class="admin-input" type="number" name="luas_bangunan" min="1" value="60" required></div>
-                    <div class="admin-field"><label for="property-title">Status Kepemilikan</label><input id="property-title" class="admin-input" type="text" name="status_kepemilikan" value="SHM (Hak Milik) + IMB / PBG"></div>
-                    <div class="admin-field wide"><label for="property-description">Deskripsi Singkat</label><textarea id="property-description" class="admin-input" name="deskripsi_singkat" rows="4" required></textarea></div>
-                    <div class="admin-field wide"><label for="property-image">Foto Utama</label><input id="property-image" class="admin-input" type="file" name="gambar_utama" accept="image/*" required></div>
-                    <div class="admin-field wide"><label for="gallery-images">Foto Galeri Tambahan</label><input id="gallery-images" class="admin-input" type="file" name="gallery_images" accept="image/*" multiple><small>Anda dapat memilih beberapa foto sekaligus.</small></div>
-                    <div class="admin-field wide"><label for="youtube-video">Tautan Video YouTube</label><input id="youtube-video" class="admin-input" type="url" name="youtube_video_url" placeholder="https://youtu.be/... atau tautan YouTube"></div>
-                    <div class="admin-field wide"><button class="admin-button gold" type="submit">Simpan Properti</button></div>
-                </form>
-            </div>
-            <div class="admin-panel">
-                <div class="admin-section-head"><div><h2>Daftar Properti</h2><p>Properti terbaru tampil di baris atas.</p></div></div>
-                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Properti</th><th>Kategori / Lokasi</th><th>Harga</th><th>Tampil</th></tr></thead><tbody>
-                    {% for prop in properties %}<tr><td><span class="table-primary">{{ prop.nama_properti }}</span><span class="table-secondary">{{ prop.kode_properti }}</span></td><td>{{ prop.kategori.nama_kategori }}<span class="table-secondary">{{ prop.lokasi_detail }}, {{ prop.kota }}</span></td><td>Rp {{ prop.harga_format_titik }}</td><td>{% if prop.tampil_di_home %}<span class="status-pill live">Aktif</span>{% else %}<span class="status-pill">Disembunyikan</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="admin-empty">Belum ada properti.</td></tr>{% endfor %}
-                </tbody></table></div>
-            </div>
+        <div class="admin-metrics">
+            <div class="admin-metric"><span>Total Properti</span><strong>{{ total_properti }}</strong></div>
+            <div class="admin-metric status-metric available-metric"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/></svg>Ready / Tersedia</span><strong>{{ available_properties }}</strong></div>
+            <div class="admin-metric status-metric sold-metric"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 8 8 8m0-8-8 8"/></svg>Terjual · SOLD</span><strong>{{ sold_properties }}</strong></div>
+            <div class="admin-metric"><span>Hasil Saat Ini</span><strong>{{ page_obj.paginator.count }}</strong></div>
         </div>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-panel">
+        <form method="get" class="admin-search-form" style="grid-template-columns:minmax(180px,1fr) 150px 170px 170px 150px auto">
+            <div class="admin-field"><label for="property-search">Cari properti</label><input class="admin-input" id="property-search" name="q" value="{{ query }}" placeholder="Nama, kode, cluster, kota, lokasi"></div>
+            <div class="admin-field"><label for="property-status">Status penjualan</label><select class="admin-input" id="property-status" name="status"><option value="all" {% if property_status == 'all' %}selected{% endif %}>Semua status</option><option value="available" {% if property_status == 'available' %}selected{% endif %}>Ready / Tersedia</option><option value="sold" {% if property_status == 'sold' %}selected{% endif %}>Sold</option></select></div>
+            <div class="admin-field"><label for="property-category">Kategori</label><select class="admin-input" id="property-category" name="category"><option value="all">Semua kategori</option>{% for category in property_categories %}<option value="{{ category.pk }}" {% if category_id == category.pk %}selected{% endif %}>{{ category.nama_kategori }}</option>{% endfor %}</select></div>
+            <div class="admin-field"><label for="property-city">Kota</label><select class="admin-input" id="property-city" name="city"><option value="all" {% if city == 'all' %}selected{% endif %}>Semua kota</option>{% for item in property_cities %}<option value="{{ item }}" {% if city == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+            <div class="admin-field"><label for="property-home">Beranda</label><select class="admin-input" id="property-home" name="home"><option value="all" {% if home_visibility == 'all' %}selected{% endif %}>Semua unit</option><option value="yes" {% if home_visibility == 'yes' %}selected{% endif %}>Tampil</option><option value="no" {% if home_visibility == 'no' %}selected{% endif %}>Disembunyikan</option></select></div>
+            <button class="admin-button gold" type="submit">Cari</button>
+        </form>
+        <div class="admin-table-wrap">
+            <table class="admin-table property-admin-table" style="min-width:1480px">
+                <thead><tr><th>Properti</th><th>Kategori / Lokasi</th><th>Harga</th><th>Status Saat Ini</th><th>Atur Status & Badge</th><th>Aksi</th></tr></thead>
+                <tbody>
+                    {% for prop in page_obj %}
+                    <tr class="{% if prop.status_penjualan == 'sold' %}property-row-sold{% endif %}">
+                        <td><span class="table-primary">{{ prop.nama_properti }}</span><span class="table-secondary">{{ prop.kode_properti }} · {{ prop.nama_cluster }}</span></td>
+                        <td>{{ prop.kategori.nama_kategori }}<span class="table-secondary">{{ prop.lokasi_detail }}, {{ prop.kota }}</span></td>
+                        <td>Rp {{ prop.harga_format_titik }}<span class="table-secondary">{% if prop.tampil_di_home %}Tampil di beranda{% else %}Tidak tampil di beranda{% endif %}</span></td>
+                        <td><span class="status-pill property-status-pill {% if prop.status_penjualan == 'available' %}ready{% else %}sold{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true">{% if prop.status_penjualan == 'sold' %}<path d="M6 6l12 12M18 6 6 18"/><circle cx="12" cy="12" r="9"/>{% else %}<path d="m6 12 4 4 8-9"/><circle cx="12" cy="12" r="9"/>{% endif %}</svg>{% if prop.status_penjualan == 'sold' %}SOLD · TERJUAL{% else %}READY · TERSEDIA{% endif %}</span><span class="table-secondary">{{ prop.badge_status }}{% if prop.badge_kedua %} · {{ prop.badge_kedua }}{% endif %}{% if prop.badge_ketiga %} · {{ prop.badge_ketiga }}{% endif %}</span></td>
+                        <td>
+                            <form method="post" class="admin-form-grid" style="grid-template-columns:145px repeat(3,minmax(145px,1fr)) 140px auto;align-items:end;gap:7px">
+                                {% csrf_token %}<input type="hidden" name="update_listing" value="1"><input type="hidden" name="property_id" value="{{ prop.pk }}">
+                                <div class="admin-field"><label>Status</label><select class="admin-input" name="status_penjualan"><option value="available" {% if prop.status_penjualan == 'available' %}selected{% endif %}>Ready / Tersedia</option><option value="sold" {% if prop.status_penjualan == 'sold' %}selected{% endif %}>Sold</option></select></div>
+                                <div class="admin-field"><label>Badge utama</label><input class="admin-input" name="badge_status" value="{{ prop.badge_status }}" maxlength="50" required></div>
+                                <div class="admin-field"><label>Badge kedua</label><input class="admin-input" name="badge_kedua" value="{{ prop.badge_kedua|default:'' }}" maxlength="50"></div>
+                                <div class="admin-field"><label>Badge ketiga</label><input class="admin-input" name="badge_ketiga" value="{{ prop.badge_ketiga|default:'' }}" maxlength="50"></div>
+                                <label class="home-visibility-toggle"><input type="checkbox" name="tampil_di_home" {% if prop.tampil_di_home %}checked{% endif %}><span>Tampil di beranda</span></label>
+                                <button class="admin-button secondary" type="submit">Simpan</button>
+                            </form>
+                        </td>
+                        <td><div class="admin-actions"><a class="admin-button secondary" href="{% url 'admin_property_edit' prop.pk %}"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L19.5 7.7a2.1 2.1 0 0 0-3-3L5 16.2 4 20z"/></svg>Edit Detail</a><form method="post" action="{% url 'admin_property_delete' prop.pk %}" onsubmit="return confirm('Hapus properti {{ prop.nama_properti|escapejs }}?')">{% csrf_token %}<button class="admin-button danger" type="submit">Hapus</button></form></div></td>
+                    </tr>
+                    {% empty %}<tr><td colspan="6" class="admin-empty">Belum ada properti yang cocok dengan pencarian ini.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav class="admin-form-actions" aria-label="Halaman properti" style="margin-top:16px"><span class="admin-note">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span><div class="admin-actions">
+            {% if page_obj.has_previous %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ property_status }}&category={{ category_id }}&city={{ city|urlencode }}&home={{ home_visibility }}&page={{ page_obj.previous_page_number }}">← Sebelumnya</a>{% endif %}
+            {% if page_obj.has_next %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ property_status }}&category={{ category_id }}&city={{ city|urlencode }}&home={{ home_visibility }}&page={{ page_obj.next_page_number }}">Berikutnya →</a>{% endif %}
+        </div></nav>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Layanan Pelanggan</span><h2>Jadwal Survei</h2><p>Atur jadwal, status, dan kontak pemohon survei properti.</p></div><a class="admin-button gold" href="{% url 'admin_survey_create' %}">+ Tambah Jadwal</a></div>
+        <div class="admin-metrics">
+            <div class="admin-metric"><span>Total Survei</span><strong>{{ total_surveys }}</strong></div>
+            <div class="admin-metric"><span>Menunggu Konfirmasi</span><strong>{{ waiting_surveys }}</strong></div>
+            <div class="admin-metric"><span>Terjadwal</span><strong>{{ scheduled_surveys }}</strong></div>
+            <div class="admin-metric"><span>Selesai</span><strong>{{ completed_surveys }}</strong></div>
+        </div>
+    </div>
+</section>
+<section class="admin-section">
+    <div class="admin-panel">
+        <form method="get" class="admin-search-form">
+            <div class="admin-field"><label for="survey-search">Cari jadwal</label><input class="admin-input" id="survey-search" name="q" value="{{ query }}" placeholder="Nama, nomor WhatsApp, properti"></div>
+            <div class="admin-field"><label for="survey-status">Status</label><select class="admin-input" id="survey-status" name="status"><option value="all" {% if survey_status == 'all' %}selected{% endif %}>Semua status</option>{% for value,label in survey_statuses %}<option value="{{ value }}" {% if survey_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <button class="admin-button gold" type="submit">Cari Jadwal</button>
+        </form>
+        <div class="admin-table-wrap"><table class="admin-table" style="min-width:1100px">
+            <thead><tr><th>Pemohon</th><th>Properti</th><th>Waktu</th><th>Status</th><th>Ubah Status</th><th>Aksi</th></tr></thead><tbody>
+                {% for survey in page_obj %}<tr>
+                    <td><span class="table-primary">{{ survey.nama_pemohon }}</span><span class="table-secondary">{{ survey.no_whatsapp }}{% if survey.user %} · @{{ survey.user.username }}{% endif %}</span></td>
+                    <td><span class="table-primary">{{ survey.properti.nama_properti }}</span><span class="table-secondary">{{ survey.properti.kode_properti }}</span></td>
+                    <td>{{ survey.tanggal_survei|date:'D, d M Y' }}<span class="table-secondary">{{ survey.get_sesi_waktu_display }}</span></td>
+                    <td><span class="status-pill {% if survey.status == 'Terjadwal' or survey.status == 'Selesai' %}live{% endif %}">{{ survey.get_status_display }}</span></td>
+                    <td><form method="post" class="admin-actions">{% csrf_token %}<input type="hidden" name="update_survey_status" value="1"><input type="hidden" name="survey_id" value="{{ survey.pk }}"><select class="admin-input" name="status" aria-label="Status survei">{% for value,label in survey_statuses %}<option value="{{ value }}" {% if survey.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="admin-button secondary" type="submit">Simpan</button></form></td>
+                    <td><div class="admin-actions"><a class="admin-button secondary" href="{% url 'admin_survey_edit' survey.pk %}">Atur</a><form method="post" action="{% url 'admin_survey_delete' survey.pk %}" onsubmit="return confirm('Hapus jadwal survei ini?')">{% csrf_token %}<button class="admin-button danger" type="submit">Hapus</button></form></div></td>
+                </tr>{% empty %}<tr><td colspan="6" class="admin-empty">Belum ada jadwal survei yang cocok.</td></tr>{% endfor %}
+            </tbody></table></div>
+        {% if page_obj.has_other_pages %}<nav class="admin-form-actions" aria-label="Halaman jadwal survei" style="margin-top:16px"><span class="admin-note">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span><div class="admin-actions">{% if page_obj.has_previous %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ survey_status }}&page={{ page_obj.previous_page_number }}">← Sebelumnya</a>{% endif %}{% if page_obj.has_next %}<a class="admin-button secondary" href="?q={{ query|urlencode }}&status={{ survey_status }}&page={{ page_obj.next_page_number }}">Berikutnya →</a>{% endif %}</div></nav>{% endif %}
+    </div>
+</section>
+{% endblock %}

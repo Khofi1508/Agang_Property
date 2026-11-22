@@ -1,6 +1,11 @@
 {% extends 'admin_base.html' %}
 
-{% block extra_head %}{% include 'partials/summernote_assets.html' %}{% endblock %}
+{% block extra_head %}
+{% include 'partials/summernote_assets.html' %}
+<style>
+    .admin-category-pill{display:inline-flex;align-items:center;gap:8px}.admin-category-pill a,.admin-link-button{border:0;padding:0;color:var(--gold);background:transparent;font:inherit;font-size:9px;text-decoration:underline;cursor:pointer}
+</style>
+{% endblock %}
 
 {% block content %}
 <section class="admin-section">
@@ -26,12 +31,13 @@
             </div>
             <div class="admin-panel admin-form-panel" id="article-categories">
                 <h3>Kategori Artikel</h3><p class="sub">Kelompokkan konten agar pembaca mudah menemukan topik.</p>
-                <form method="post">
+                <form method="post" action="{% url 'admin_articles' %}?section=categories#article-categories">
                     {% csrf_token %}<input type="hidden" name="tambah_kategori_artikel" value="1">
-                    <div class="admin-form-grid">{% for field in article_category_form %}<div class="admin-field wide"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>{% endfor %}</div>
+                    {% if article_category_form.non_field_errors %}<div class="admin-error">{{ article_category_form.non_field_errors }}</div>{% endif %}
+                    <div class="admin-form-grid">{% for field in article_category_form %}<div class="admin-field wide"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>{% endfor %}</div>
                     <div class="admin-form-actions"><button class="admin-button" type="submit">Tambah Kategori</button></div>
                 </form>
-                <div class="admin-category-list">{% for category in article_categories %}<span class="admin-category-pill">{{ category.nama_kategori }}</span>{% empty %}<span class="admin-note">Belum ada kategori.</span>{% endfor %}</div>
+                <div class="admin-category-list">{% for category in article_categories %}<div class="admin-category-pill">{{ category.nama_kategori }} <a href="{% url 'admin_article_category_edit' category.pk %}" aria-label="Edit kategori {{ category.nama_kategori }}">Edit</a><form class="admin-inline-form" method="post" action="{% url 'admin_article_category_delete' category.pk %}" onsubmit="return confirm('Hapus kategori {{ category.nama_kategori|escapejs }}?')">{% csrf_token %}<button class="admin-link-button" type="submit">Hapus</button></form></div>{% empty %}<span class="admin-note">Belum ada kategori.</span>{% endfor %}</div>
             </div>
         </div>
     </div>

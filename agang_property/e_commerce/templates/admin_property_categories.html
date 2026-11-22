@@ -1,0 +1,37 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Katalog Hunian</span><h2>Kategori Properti</h2><p>Atur kategori yang digunakan untuk mengelompokkan properti di katalog.</p></div><span class="status-pill">{{ categories|length }} kategori</span></div>
+        <div class="admin-grid">
+            <div class="admin-panel admin-form-panel">
+                <h3>{% if form.instance.pk %}Atur Kategori{% else %}Tambah Kategori{% endif %}</h3><p class="sub">Slug dibuat otomatis bila dikosongkan.</p>
+                <form method="post">
+                    {% csrf_token %}<input type="hidden" name="add_category" value="1">
+                    {% for field in form %}<div class="admin-field" style="margin-bottom:12px"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>{% endfor %}
+                    {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+                    <button class="admin-button gold" type="submit">{% if form.instance.pk %}Simpan Perubahan{% else %}Simpan Kategori{% endif %}</button>
+                </form>
+            </div>
+            <div class="admin-panel">
+                <div class="admin-section-head"><div><h2>Daftar Kategori</h2><p>Nama dan slug dapat diedit langsung di daftar.</p></div></div>
+                <div class="admin-table-wrap"><table class="admin-table" style="min-width:720px"><thead><tr><th>Kategori</th><th>Slug</th><th>Properti</th><th>Aksi</th></tr></thead><tbody>
+                    {% for category in categories %}<tr>
+                        <td colspan="2">
+                            <form method="post" class="admin-form-grid" style="grid-template-columns:1fr 1fr auto;align-items:end;gap:8px">
+                                {% csrf_token %}<input type="hidden" name="save_category" value="1"><input type="hidden" name="category_id" value="{{ category.pk }}">
+                                <div class="admin-field"><label>Nama kategori</label><input class="admin-input" name="nama_kategori" value="{{ category.nama_kategori }}" maxlength="100" required></div>
+                                <div class="admin-field"><label>Slug</label><input class="admin-input" name="slug" value="{{ category.slug }}" maxlength="50" required></div>
+                                <button class="admin-button secondary" type="submit">Simpan</button>
+                            </form>
+                        </td>
+                        <td>{{ category.properties.count }}</td>
+                        <td>{% if not category.properties.exists %}<form method="post" onsubmit="return confirm('Hapus kategori {{ category.nama_kategori|escapejs }}?')">{% csrf_token %}<input type="hidden" name="delete_category" value="1"><input type="hidden" name="category_id" value="{{ category.pk }}"><button class="admin-button danger" type="submit">Hapus</button></form>{% else %}<span class="table-secondary">Masih digunakan</span>{% endif %}</td>
+                    </tr>{% empty %}<tr><td colspan="4" class="admin-empty">Belum ada kategori properti.</td></tr>{% endfor %}
+                </tbody></table></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

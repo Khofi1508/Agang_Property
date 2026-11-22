@@ -1,0 +1,52 @@
+{% extends 'admin_base.html' %}
+
+{% block extra_head %}
+<style>
+    .admin-form-section{padding:17px 0;border-top:1px solid var(--line)}.admin-form-section:first-of-type{border-top:0;padding-top:0}.admin-form-section h3{margin:0 0 13px;color:var(--gold-light);font:600 17px var(--serif)}
+    .gallery-form-row{padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:7px;background:var(--panel2)}.gallery-form-row .admin-form-grid{grid-template-columns:2fr 2fr 1fr auto;align-items:end}.current-image{display:flex;align-items:center;gap:10px;margin:7px 0;color:var(--muted);font-size:10px}.current-image img{width:70px;height:52px;object-fit:cover;border-radius:5px;border:1px solid var(--line)}.property-main-preview{max-width:220px;max-height:140px;object-fit:cover;border:1px solid var(--line);border-radius:6px;margin:0 0 8px}.sold-warning{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:13px 15px;border:1px solid #fb7185;border-radius:7px;background:#641e31;color:#fff;font-size:14px;font-weight:900;letter-spacing:.08em}.sold-warning svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+    @media(max-width:700px){.gallery-form-row .admin-form-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Katalog Hunian</span><h2>{% if is_create %}Tambah Properti{% else %}Atur Properti{% endif %}</h2><p>Kelola semua informasi unit, badge, legalitas, spesifikasi, foto, dan status seperti formulir properti di Django Admin.</p></div><a class="admin-button secondary" href="{% url 'admin_properties' %}">← Kembali ke daftar</a></div>
+        {% if properti and properti.status_penjualan == 'sold' %}<div class="sold-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 8 8 8m0-8-8 8"/></svg>UNIT INI SOLD · TERJUAL</div>{% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+            {% for section_title, fields in fieldsets %}
+            <section class="admin-form-section"><h3>{{ section_title }}</h3><div class="admin-form-grid">
+                {% for field in fields %}
+                <div class="admin-field {% if field.field.widget.attrs.rows or field.name == 'gambar_utama' or field.name == 'youtube_video_url' %}wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {% if field.name == 'gambar_utama' and properti.gambar_utama %}<img class="property-main-preview" src="{{ properti.gambar_utama.url }}" alt="Foto utama {{ properti.nama_properti }}">{% endif %}
+                    {{ field }}
+                    {% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+            </div></section>
+            {% endfor %}
+
+            <section class="admin-form-section"><h3>Foto Galeri Tambahan</h3><p class="admin-note">Tambahkan beberapa foto, urutan tampil, dan keterangan. Centang hapus untuk menghilangkan foto yang sudah tersimpan.</p>
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}<div class="admin-error">{{ formset.non_form_errors }}</div>{% endif %}
+                {% for gallery_form in formset %}
+                <div class="gallery-form-row">
+                    {% for hidden in gallery_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <div class="admin-form-grid">
+                        <div class="admin-field"><label for="{{ gallery_form.gambar.id_for_label }}">Foto</label>{% if gallery_form.instance.pk and gallery_form.instance.gambar %}<div class="current-image"><img src="{{ gallery_form.instance.gambar.url }}" alt="{{ gallery_form.instance.keterangan|default:'Foto galeri properti' }}"><span>Foto tersimpan · urutan {{ gallery_form.instance.urutan }}</span></div>{% endif %}{{ gallery_form.gambar }}{% for error in gallery_form.gambar.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>
+                        <div class="admin-field"><label for="{{ gallery_form.keterangan.id_for_label }}">Keterangan</label>{{ gallery_form.keterangan }}{% for error in gallery_form.keterangan.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>
+                        <div class="admin-field"><label for="{{ gallery_form.urutan.id_for_label }}">Urutan</label>{{ gallery_form.urutan }}{% for error in gallery_form.urutan.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>
+                        {% if gallery_form.DELETE %}<div class="admin-field"><label for="{{ gallery_form.DELETE.id_for_label }}">Hapus foto</label>{{ gallery_form.DELETE }}</div>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            <div class="admin-form-actions"><button class="admin-button gold" type="submit">{% if is_create %}Simpan Properti{% else %}Simpan Perubahan{% endif %}</button><span class="admin-note">Foto utama dan gambar galeri dikelola di halaman ini.</span></div>
+        </form>
+    </div>
+</section>
+{% endblock %}

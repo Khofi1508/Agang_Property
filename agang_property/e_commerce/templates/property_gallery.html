@@ -13,8 +13,16 @@
         :root{--bg:#111215;--card:#191a1e;--gold:#facc15;--muted:#a1a1aa;--line:#2a2b30}
         *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8fafc;font:15px 'Plus Jakarta Sans',sans-serif;line-height:1.6}
         a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 36px));margin:auto}.nav{border-bottom:1px solid var(--line);padding:16px 0}.navin{display:flex;justify-content:space-between;align-items:center}.logo{width:170px;max-height:56px;object-fit:contain}.back{color:var(--gold);font-size:13px;font-weight:700}.hero{padding:42px 0 26px}.eyebrow{color:var(--gold);text-transform:uppercase;letter-spacing:1px;font-size:11px;font-weight:700}.hero h1{font:600 clamp(30px,5vw,48px) 'Playfair Display',serif;margin:7px 0}.hero p{color:var(--muted);margin:0}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:8px 0 44px}.photo{position:relative;min-height:220px;aspect-ratio:4/3;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card)}.photo.feature{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}.photo img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .35s}.photo:hover img{transform:scale(1.035)}.caption{position:absolute;inset:auto 0 0;padding:35px 15px 13px;background:linear-gradient(transparent,rgba(0,0,0,.82));font-size:13px}.video-section{padding:14px 0 70px}.video-section h2{font:600 30px 'Playfair Display',serif}.video-frame{overflow:hidden;aspect-ratio:16/9;border-radius:14px;background:var(--card);border:1px solid var(--line)}.video-frame iframe{width:100%;height:100%;border:0}.empty{padding:26px;border-radius:10px;background:var(--card);color:var(--muted)}.actions{display:flex;gap:10px;margin-top:20px}.button{display:inline-block;padding:12px 16px;border-radius:7px;background:var(--gold);color:#171717;font-weight:700;font-size:12px}.button.alt{background:#28292d;color:#eee}
+        .photo{display:block;width:100%;padding:0;color:inherit;text-align:left;cursor:zoom-in}
+        .lightbox{width:min(96vw,1200px);height:min(92vh,850px);max-width:none;max-height:none;padding:56px 64px 24px;border:1px solid #45464d;border-radius:14px;background:#101114;color:#fff;overflow:hidden}
+        .lightbox::backdrop{background:rgba(0,0,0,.88)}.lightbox-stage{height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+        .lightbox-image{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;user-select:none;-webkit-user-drag:none;cursor:grab}.lightbox-image.dragging{cursor:grabbing}
+        .lightbox-close,.lightbox-control,.lightbox-arrow{position:absolute;border:1px solid #45464d;border-radius:8px;background:#222329;color:#fff;font:600 14px 'Plus Jakarta Sans',sans-serif;cursor:pointer}
+        .lightbox-close{top:12px;right:14px;padding:8px 12px}.lightbox-tools{position:absolute;top:12px;left:14px;display:flex;gap:7px}.lightbox-control{position:static;padding:8px 11px}
+        .lightbox-arrow{top:50%;transform:translateY(-50%);width:42px;height:48px;font-size:22px}.lightbox-arrow.prev{left:12px}.lightbox-arrow.next{right:12px}
+        .lightbox-caption{position:absolute;bottom:8px;left:64px;right:64px;text-align:center;color:#d4d4d8;font-size:12px}.lightbox-counter{position:absolute;top:21px;left:50%;transform:translateX(-50%);color:#d4d4d8;font-size:12px}
         @media(max-width:760px){.gallery{grid-template-columns:repeat(2,1fr)}.photo.feature{grid-column:span 2;grid-row:auto;aspect-ratio:4/3}.photo{min-height:170px}.logo{width:140px}}
-        @media(max-width:460px){.gallery{gap:9px}.photo{min-height:130px;border-radius:8px}.caption{font-size:11px;padding:28px 10px 8px}.actions{flex-direction:column}}
+        @media(max-width:460px){.gallery{gap:9px}.photo{min-height:130px;border-radius:8px}.caption{font-size:11px;padding:28px 10px 8px}.actions{flex-direction:column}.lightbox{width:100vw;height:100vh;padding:54px 48px 38px;border-radius:0}.lightbox-arrow.prev{left:5px}.lightbox-arrow.next{right:5px}.lightbox-caption{left:48px;right:48px}}
     </style>
 </head>
 <body>
@@ -22,9 +30,16 @@
     <main class="wrap">
         <section class="hero"><span class="eyebrow">Galeri Properti · {{ prop.kode_properti }}</span><h1>{{ prop.nama_properti }}</h1><p>{{ prop.lokasi_detail }}, {{ prop.kota }} · {{ prop.deskripsi_singkat }}</p></section>
         <section class="gallery" aria-label="Foto {{ prop.nama_properti }}">
-            {% if prop.gambar_utama %}<a class="photo feature" href="{{ prop.gambar_utama.url }}" target="_blank" rel="noopener"><img src="{{ prop.gambar_utama.url }}" alt="Tampak utama {{ prop.nama_properti }}"><span class="caption">Tampak utama</span></a>{% endif %}
-            {% for foto in gallery_images %}<a class="photo" href="{{ foto.gambar.url }}" target="_blank" rel="noopener"><img src="{{ foto.gambar.url }}" alt="{{ foto.keterangan|default:prop.nama_properti }}"><span class="caption">{{ foto.keterangan|default:'Foto properti' }}</span></a>{% endfor %}
+            {% if prop.gambar_utama %}<button class="photo feature" type="button" aria-label="Perbesar foto tampak utama"><img src="{{ prop.gambar_utama.url }}" alt="Tampak utama {{ prop.nama_properti }}"><span class="caption">Tampak utama · klik untuk memperbesar</span></button>{% endif %}
+            {% for foto in gallery_images %}<button class="photo" type="button" aria-label="Perbesar foto {{ foto.keterangan|default:prop.nama_properti }}"><img src="{{ foto.gambar.url }}" alt="{{ foto.keterangan|default:prop.nama_properti }}"><span class="caption">{{ foto.keterangan|default:'Foto properti' }} · klik untuk memperbesar</span></button>{% endfor %}
         </section>
+        <dialog class="lightbox" id="gallery-lightbox" aria-label="Pratinjau foto galeri">
+            <div class="lightbox-tools"><button class="lightbox-control" type="button" data-zoom="out" aria-label="Perkecil">−</button><button class="lightbox-control" type="button" data-zoom="reset">Reset</button><button class="lightbox-control" type="button" data-zoom="in" aria-label="Perbesar">+</button></div>
+            <span class="lightbox-counter" id="lightbox-counter"></span><button class="lightbox-close" type="button" data-close>✕ Tutup</button>
+            <button class="lightbox-arrow prev" type="button" data-step="-1" aria-label="Foto sebelumnya">‹</button>
+            <div class="lightbox-stage"><img class="lightbox-image" id="lightbox-image" alt=""></div>
+            <button class="lightbox-arrow next" type="button" data-step="1" aria-label="Foto berikutnya">›</button><p class="lightbox-caption" id="lightbox-caption"></p>
+        </dialog>
         {% if youtube_embed_url %}
             <section class="video-section"><span class="eyebrow">Video Properti</span><h2>Jelajahi unit ini</h2><div class="video-frame"><iframe src="{{ youtube_embed_url }}" title="Video {{ prop.nama_properti }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></section>
         {% elif prop.youtube_video_url %}
@@ -32,5 +47,41 @@
         {% endif %}
         <div class="actions">{% if is_sold %}<span class="empty">Properti ini sudah berstatus SOLD dan tidak menerima DP baru. <a href="{% url 'catalog' %}" style="color:var(--gold)">Lihat unit lainnya →</a></span>{% else %}<a class="button" href="{% url 'payment_create' prop.pk %}">Lanjut ke Down Payment</a><a class="button alt" href="{% url 'property_detail' prop.pk %}#booking-section">Jadwalkan survei</a>{% endif %}</div>
     </main>
+    <script>
+        (() => {
+            const dialog = document.getElementById('gallery-lightbox');
+            const thumbnails = [...document.querySelectorAll('.photo')];
+            if (!dialog || !thumbnails.length) return;
+            const image = document.getElementById('lightbox-image');
+            const caption = document.getElementById('lightbox-caption');
+            const counter = document.getElementById('lightbox-counter');
+            const stage = dialog.querySelector('.lightbox-stage');
+            let current = 0, scale = 1, offsetX = 0, offsetY = 0, dragging = false, startX = 0, startY = 0;
+            function applyTransform() { image.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`; }
+            function render() {
+                const thumb = thumbnails[current].querySelector('img');
+                image.src = thumb.currentSrc || thumb.src;
+                image.alt = thumb.alt;
+                caption.textContent = thumb.alt || `Foto ${current + 1}`;
+                counter.textContent = `${current + 1} / ${thumbnails.length}`;
+                scale = 1; offsetX = 0; offsetY = 0; applyTransform();
+            }
+            function changeZoom(delta) { scale = delta === 0 ? 1 : Math.min(5, Math.max(1, scale + delta)); if (scale === 1) offsetX = offsetY = 0; applyTransform(); }
+            thumbnails.forEach((thumb, index) => thumb.addEventListener('click', () => { current = index; render(); dialog.showModal(); }));
+            dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
+            dialog.querySelectorAll('[data-step]').forEach(button => button.addEventListener('click', () => { current = (current + Number(button.dataset.step) + thumbnails.length) % thumbnails.length; render(); }));
+            dialog.querySelectorAll('[data-zoom]').forEach(button => button.addEventListener('click', () => { const action = button.dataset.zoom; changeZoom(action === 'reset' ? 0 : action === 'in' ? .5 : -.5); }));
+            dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+            dialog.addEventListener('keydown', event => {
+                if (event.key === 'ArrowRight') { current = (current + 1) % thumbnails.length; render(); }
+                if (event.key === 'ArrowLeft') { current = (current - 1 + thumbnails.length) % thumbnails.length; render(); }
+            });
+            stage.addEventListener('wheel', event => { event.preventDefault(); changeZoom(event.deltaY < 0 ? .25 : -.25); }, {passive:false});
+            image.addEventListener('pointerdown', event => { if (scale <= 1) return; dragging = true; startX = event.clientX - offsetX; startY = event.clientY - offsetY; image.classList.add('dragging'); image.setPointerCapture(event.pointerId); });
+            image.addEventListener('pointermove', event => { if (!dragging) return; offsetX = event.clientX - startX; offsetY = event.clientY - startY; applyTransform(); });
+            const stopDragging = () => { dragging = false; image.classList.remove('dragging'); };
+            image.addEventListener('pointerup', stopDragging); image.addEventListener('pointercancel', stopDragging);
+        })();
+    </script>
 </body>
 </html>

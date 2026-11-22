@@ -403,10 +403,10 @@
             </a>
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}">HOME</a></li>
-                <li><a href="#property-gallery">GALLERY</a></li>
+                <li><a href="{% url 'gallery' %}">GALLERY</a></li>
                 <li><a href="{% url 'catalog' %}" class="active">CATALOG</a></li>
                 <li><a href="{% url 'article_list' %}">ARTIKEL</a></li>
-                <li><a href="{% url 'home' %}#upcoming">ABOUT US</a></li>
+                <li><a href="{% url 'about_us' %}">ABOUT US</a></li>
                 <li><a href="#contact-footer">CONTACT</a></li>
             </ul>
             <a href="https://wa.me/628118900234" class="btn-konsultasi" target="_blank">KONSULTASI MARKETING</a>
@@ -624,7 +624,7 @@
                         <strong id="monthly-payment">Rp 0</strong>
                         <div class="sim-result-detail"><span>Plafon pinjaman</span><b id="loan-amount">Rp 0</b></div>
                     </div>
-                    <a href="https://wa.me/628118900234?text=Halo%20Agang%20Property,%20saya%20ingin%20mengajukan%20Pre-Approval%20KPR%20untuk%20unit%20{{ prop.nama_properti|urlencode }}" target="_blank" rel="noopener" class="btn-preapproval">AJUKAN PRE-APPROVAL KPR SEKARANG</a>
+                    {% if is_sold %}<span class="btn-preapproval" aria-disabled="true">UNIT SUDAH SOLD</span>{% else %}<a href="{% url 'payment_create' prop.pk %}" class="btn-preapproval">SIMULASIKAN &amp; LANJUT KE DP</a>{% endif %}
                     <p class="kpr-note">*Simulasi indikatif. Angsuran final mengikuti penilaian dan ketentuan bank.</p>
                 </div>
 
@@ -712,7 +712,7 @@
                     <a href="{% url 'home' %}" class="brand">{% include 'partials/site_logo_image.html' with logo_class='brand-logo' %}</a>
                     <p class="footer-description">Menghadirkan mahakarya arsitektur hunian eksklusif dan investasi properti prestisius dengan privasi optimal serta standar kenyamanan tertinggi.</p>
                 </div>
-                <div><h3 class="footer-title">EKSPLORASI PROPERTI</h3><div class="footer-links"><a href="{% url 'home' %}">Home</a><a href="#property-gallery">Gallery</a><a href="{% url 'catalog' %}">Catalog</a><a href="{% url 'home' %}#upcoming">About Us</a></div></div>
+                <div><h3 class="footer-title">EKSPLORASI PROPERTI</h3><div class="footer-links"><a href="{% url 'home' %}">Home</a><a href="{% url 'gallery' %}">Gallery</a><a href="{% url 'catalog' %}">Catalog</a><a href="{% url 'about_us' %}">About Us</a></div></div>
                 <div><h3 class="footer-title">PRIVATE CONCIERGE</h3><p class="footer-contact">Hubungi konsultan properti privat kami untuk reservasi dan penawaran eksklusif.<br><a href="tel:+628118900234">+62 811 8900 234</a><br><a href="https://wa.me/628118900234" target="_blank" rel="noopener">WhatsApp Agang Property</a><br>{{ prop.kota }}</p></div>
             </div>
             <div class="footer-bottom"><span>© 2026 Agang Property. Seluruh hak cipta dilindungi undang-undang.</span><span>Kebijakan Privasi &nbsp;&nbsp; Syarat Layanan</span></div>

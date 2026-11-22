@@ -1,0 +1,16 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<section class="admin-section">
+    <div class="admin-panel">
+        <div class="admin-section-head"><div><span class="admin-eyebrow">Layanan Pelanggan</span><h2>{% if is_create %}Tambah Jadwal Survei{% else %}Atur Jadwal Survei{% endif %}</h2><p>Lengkapi data properti, pemohon, waktu, catatan, dan status survei.</p></div><a class="admin-button secondary" href="{% url 'admin_surveys' %}">← Kembali ke daftar survei</a></div>
+        {% if form.non_field_errors %}<div class="admin-error">{{ form.non_field_errors }}</div>{% endif %}
+        <form method="post">
+            {% csrf_token %}<div class="admin-form-grid">
+                {% for field in form %}<div class="admin-field {% if field.name == 'catatan' %}wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% if field.help_text %}<small class="admin-help">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="admin-error">{{ error }}</div>{% endfor %}</div>{% endfor %}
+            </div>
+            <div class="admin-form-actions"><button class="admin-button gold" type="submit">Simpan Jadwal</button><span class="admin-note">Perubahan status akan terlihat pada daftar jadwal.</span></div>
+        </form>
+    </div>
+</section>
+{% endblock %}

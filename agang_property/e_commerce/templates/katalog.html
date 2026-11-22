@@ -880,10 +880,10 @@
 
             <ul class="nav-links">
                 <li><a href="{% url 'home' %}">HOME</a></li>
-                <li><a href="{% url 'catalog' %}">GALLERY</a></li>
+                <li><a href="{% url 'gallery' %}">GALLERY</a></li>
                 <li><a href="{% url 'catalog' %}" class="active">CATALOG</a></li>
                 <li><a href="{% url 'article_list' %}">ARTIKEL</a></li>
-                <li><a href="{% url 'home' %}#upcoming">ABOUT US</a></li>
+                <li><a href="{% url 'about_us' %}">ABOUT US</a></li>
                 <li><a href="#footer">CONTACT</a></li>
             </ul>
 
@@ -1337,10 +1337,10 @@
                     <h5 class="footer-heading">EKSPLORASI PROPERTI</h5>
                     <div class="footer-links-grid">
                         <a href="{% url 'home' %}">Home</a>
-                        <a href="{% url 'catalog' %}">Gallery</a>
+                        <a href="{% url 'gallery' %}">Gallery</a>
                         <a href="{% url 'catalog' %}">Catalog</a>
                         <a href="#footer">Contact</a>
-                        <a href="{% url 'home' %}#upcoming">About Us</a>
+                        <a href="{% url 'about_us' %}">About Us</a>
                         {% for page in public_pages %}<a href="{{ page.get_absolute_url }}">{{ page.judul }}</a>{% endfor %}
                     </div>
                 </div>
