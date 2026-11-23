@@ -4,3 +4,4 @@ sqlparse==0.6.0
 tzdata==2026.5
 pillow
 requests
+asgiref==3.12.1
