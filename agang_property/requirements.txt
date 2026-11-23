@@ -1,4 +1,4 @@
-﻿asgir=3.12.1
+﻿asgiref=3.12.1
 Django
 mysqlclient
 sqlparse==0.6.0
