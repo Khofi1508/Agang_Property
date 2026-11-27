@@ -33,7 +33,7 @@
         <div class="admin-panel">
             <div class="admin-section-head"><div><h2>Properti Terbaru</h2><p>{{ total_properti }} unit tercatat di katalog.</p></div><a class="admin-button" href="{% url 'admin_properties' %}">Kelola Properti</a></div>
             <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Properti</th><th>Lokasi</th><th>Harga</th></tr></thead><tbody>
-                {% for prop in properties %}<tr><td><span class="table-primary">{{ prop.nama_properti }}</span><span class="table-secondary">{{ prop.kamar_tidur }} · {{ prop.kamar_mandi }} KM</span></td><td>{{ prop.kota }}</td><td>Rp {{ prop.harga_format_titik }}</td></tr>{% empty %}<tr><td colspan="3" class="admin-empty">Belum ada data properti.</td></tr>{% endfor %}
+                {% for prop in properties %}<tr><td><span class="table-primary">{{ prop.nama_properti }}</span><span class="table-secondary">{{ prop.kamar_tidur_label }} · {{ prop.kamar_mandi }} KM</span></td><td>{{ prop.kota }}</td><td>Rp {{ prop.harga_format_titik }}</td></tr>{% empty %}<tr><td colspan="3" class="admin-empty">Belum ada data properti.</td></tr>{% endfor %}
             </tbody></table></div>
         </div>
         <div class="admin-panel">

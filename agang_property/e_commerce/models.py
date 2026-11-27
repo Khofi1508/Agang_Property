@@ -124,6 +124,14 @@ class Property(models.Model):
         return f"{int(self.harga):,}".replace(",", ".")
 
     @property
+    def kamar_tidur_label(self):
+        """Tampilan kamar tidur konsisten ('2 KT') walau data tersimpan '2' atau '7 KT'."""
+        nilai = str(self.kamar_tidur or "").strip()
+        if not nilai:
+            return "-"
+        return nilai if "KT" in nilai.upper() else f"{nilai} KT"
+
+    @property
     def harga_coret_format(self):
         if self.harga_coret:
             return f"{int(self.harga_coret):,}".replace(",", ".")
